@@ -12,7 +12,10 @@ CREATE TABLE UTILISATEUR (
     prenom VARCHAR(50) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     mot_de_passe VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'responsable') NOT NULL
+    role ENUM('admin', 'responsable') NOT NULL,
+    id_coop VARCHAR(15) NULL,
+    CONSTRAINT fk_utilisateur_coop FOREIGN KEY (id_coop) REFERENCES COOPERATIVE(id_coop)
+        ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 CREATE TABLE COOPERATIVE (
