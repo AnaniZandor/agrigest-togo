@@ -24,12 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($utilisateur && password_verify($motDePasse, $utilisateur['mot_de_passe'])) {
             // Connexion reussie : on stocke les infos en session
             $_SESSION['id_utilisateur'] = $utilisateur['id_utilisateur'];
+            $_SESSION['id_coop'] = $utilisateur['id_coop']; // sera NULL pour un admin, rempli pour un responsable
             $_SESSION['nom'] = $utilisateur['nom'];
             $_SESSION['prenom'] = $utilisateur['prenom'];
             $_SESSION['role'] = $utilisateur['role'];
 
             // Redirection selon le role
- if ($utilisateur['role'] === 'admin') {
+if ($utilisateur['role'] === 'admin') {
     header('Location: ../admin/dashboard.php');
 } else {
     header('Location: ../responsable/dashboard.php');
