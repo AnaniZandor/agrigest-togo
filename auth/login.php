@@ -1,9 +1,4 @@
 <?php
-/**
- * auth/login_admin.php
- * Page de connexion pour Administrateur et Responsable de cooperative
- */
-
 session_start();
 require_once '../config/connexion.php';
 require_once '../includes/fonctions.php';
@@ -17,29 +12,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || empty($motDePasse)) {
         $erreur = "Veuillez remplir tous les champs.";
     } else {
+        // 1. On cherche d'abord dans UTILISATEUR (admin/responsable)
         $stmt = $pdo->prepare("SELECT * FROM UTILISATEUR WHERE email = ?");
         $stmt->execute([$email]);
         $utilisateur = $stmt->fetch();
 
         if ($utilisateur && password_verify($motDePasse, $utilisateur['mot_de_passe'])) {
-            // Connexion reussie : on stocke les infos en session
             $_SESSION['id_utilisateur'] = $utilisateur['id_utilisateur'];
-            $_SESSION['id_coop'] = $utilisateur['id_coop']; // sera NULL pour un admin, rempli pour un responsable
+            $_SESSION['id_coop'] = $utilisateur['id_coop'];
             $_SESSION['nom'] = $utilisateur['nom'];
             $_SESSION['prenom'] = $utilisateur['prenom'];
             $_SESSION['role'] = $utilisateur['role'];
 
-            // Redirection selon le role
-if ($utilisateur['role'] === 'admin') {
-    header('Location: ../admin/dashboard.php');
-} else {
-    header('Location: ../responsable/dashboard.php');
-}
-exit;
-
-        } else {
-            $erreur = "Email ou mot de passe incorrect.";
+            if ($utilisateur['role'] === 'admin') {
+                header('Location: ../admin/dashboard.php');
+            } else {
+                header('Location: ../responsable/dashboard.php');
+            }
+            exit;
         }
+
+        // 2. Si pas trouve, on cherche dans AGRICULTEUR
+        $stmt = $pdo->prepare("SELECT * FROM AGRICULTEUR WHERE email_agri = ?");
+        $stmt->execute([$email]);
+        $agriculteur = $stmt->fetch();
+
+        if ($agriculteur && password_verify($motDePasse, $agriculteur['mot_de_passe_agri'])) {
+            $_SESSION['id_agri'] = $agriculteur['id_agri'];
+            $_SESSION['nom_agri'] = $agriculteur['nom_agri'];
+            $_SESSION['prenom_agri'] = $agriculteur['prenom_agri'];
+            $_SESSION['id_coop_agri'] = $agriculteur['id_coop'];
+            $_SESSION['role'] = 'agriculteur';
+
+            header('Location: ../agriculteur/dashboard.php');
+            exit;
+        }
+
+        // 3. Si on arrive ici, aucune table n'a donne de resultat valide
+        $erreur = "Email ou mot de passe incorrect.";
     }
 }
 ?>
@@ -54,8 +64,8 @@ exit;
 <body>
     <div class="page-container">
         <div class="card" style="max-width: 400px; margin: 80px auto;">
-            <h1>🌱 AgriGest Togo</h1>
-            <h2>Connexion Administrateur / Responsable</h2>
+            <h1>AgriGest Togo</h1>
+            <h2>Connexion</h2>
 
             <?php if ($erreur): ?>
                 <div class="alerte-erreur"><?= htmlspecialchars($erreur) ?></div>
@@ -76,7 +86,7 @@ exit;
             </form>
 
             <p style="margin-top: 20px;">
-                <a href="../index.php">&larr; Retour a l'accueil</a>
+                <a href="../index.php">Retour a l'accueil</a>
             </p>
         </div>
     </div>

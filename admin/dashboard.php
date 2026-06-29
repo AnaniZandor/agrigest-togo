@@ -4,7 +4,7 @@ require_once '../config/connexion.php';
 
 // Verification que l'utilisateur est bien connecte et est admin
 if (!isset($_SESSION['id_utilisateur']) || $_SESSION['role'] !== 'admin') {
-    header('Location: ../auth/login_admin.php');
+    header('Location: ../auth/login.php');
     exit;
 }
 
