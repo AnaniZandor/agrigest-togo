@@ -3,7 +3,7 @@ session_start();
 require_once '../config/connexion.php';
 
 if (!isset($_SESSION['id_agri']) || $_SESSION['role'] !== 'agriculteur') {
-    header('Location: ../auth/login_agriculteur.php');
+    header('Location: ../auth/login.php');
     exit;
 }
 

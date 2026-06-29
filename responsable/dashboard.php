@@ -3,7 +3,7 @@ session_start();
 require_once '../config/connexion.php';
 
 if (!isset($_SESSION['id_utilisateur']) || $_SESSION['role'] !== 'responsable') {
-    header('Location: ../auth/login_admin.php');
+    header('Location: ../auth/login.php');
     exit;
 }
 
