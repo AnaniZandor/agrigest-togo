@@ -48,10 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_agriculteur']
             $erreur = "Le mot de passe doit contenir au moins 6 caracteres.";
         } else {
             try {
-                $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM AGRICULTEUR WHERE email_agri = ?");
+              $stmt = $pdo->prepare("SELECT nom_agri, prenom_agri, id_agri FROM AGRICULTEUR WHERE email_agri = ?");
                 $stmt->execute([$email]);
-                if ($stmt->fetch()['total'] > 0) {
-                    $erreur = "Cet email est deja utilise par un autre agriculteur.";
+                $existant = $stmt->fetch();
+
+                if ($existant) {
+                    $erreur = "Cet email est deja utilise par " . htmlspecialchars($existant['prenom_agri']) . " " . htmlspecialchars($existant['nom_agri']) . " (code " . htmlspecialchars($existant['id_agri']) . ").";
                 } else {
                     $nouvelId = genererCodeAvecParent($pdo, 'AGRICULTEUR', 'id_agri', 'AGR', $idCoop);
                     $hash = password_hash($motDePasse, PASSWORD_DEFAULT);
