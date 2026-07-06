@@ -1,93 +1,148 @@
 <?php
+/**
+ * auth/login.php
+ * Authentification des utilisateurs (admin, responsable, agriculteur)
+ * Table UTILISATEUR centralisée avec roles distincts
+ */
+
 session_start();
-require_once '../config/connexion.php';
-require_once '../includes/fonctions.php';
+
+// Si deja connecte, rediriger vers le dashboard approprie
+if (isset($_SESSION['id_utilisateur']) && isset($_SESSION['role'])) {
+    $redirection = [
+        'admin' => '../admin/dashboard.php',
+        'responsable' => '../responsable/dashboard.php',
+        'agriculteur' => '../agriculteur/dashboard.php'
+    ];
+    header('Location: ' . ($redirection[$_SESSION['role']] ?? '../'));
+    exit;
+}
+
+// Inclure les fichiers necessaires
+require_once('../config/connexion.php');
+require_once('../includes/fonctions.php');
 
 $erreur = '';
+$email = '';
 
+// Traitement du formulaire
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = nettoyer($_POST['email'] ?? '');
-    $motDePasse = $_POST['mot_de_passe'] ?? '';
-
-    if (empty($email) || empty($motDePasse)) {
-        $erreur = "Veuillez remplir tous les champs.";
+    
+    // Verifier le token CSRF
+    if (!verifierCsrf()) {
+        $erreur = 'Erreur de sécurité (CSRF). Veuillez réessayer.';
     } else {
-        // 1. On cherche d'abord dans UTILISATEUR (admin/responsable)
-        $stmt = $pdo->prepare("SELECT * FROM UTILISATEUR WHERE email = ?");
-        $stmt->execute([$email]);
-        $utilisateur = $stmt->fetch();
-
-        if ($utilisateur && password_verify($motDePasse, $utilisateur['mot_de_passe'])) {
-            $_SESSION['id_utilisateur'] = $utilisateur['id_utilisateur'];
-            $_SESSION['id_coop'] = $utilisateur['id_coop'];
-            $_SESSION['nom'] = $utilisateur['nom'];
-            $_SESSION['prenom'] = $utilisateur['prenom'];
-            $_SESSION['role'] = $utilisateur['role'];
-
-            if ($utilisateur['role'] === 'admin') {
-                header('Location: ../admin/dashboard.php');
-            } else {
-                header('Location: ../responsable/dashboard.php');
+        
+        // Recuperer et nettoyer les donnees
+        $email = nettoyer($_POST['email'] ?? '');
+        $motDePasse = $_POST['password'] ?? '';
+        
+        // Validations basiques
+        if (empty($email) || empty($motDePasse)) {
+            $erreur = 'Email et mot de passe requis.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $erreur = 'Format d\'email invalide.';
+        } else {
+            
+            // Rechercher l'utilisateur par email
+            try {
+                $stmt = $pdo->prepare(
+                    "SELECT id_utilisateur, nom, prenom, email, mot_de_passe, role 
+                     FROM UTILISATEUR 
+                     WHERE email = ?"
+                );
+                $stmt->execute([$email]);
+                $utilisateur = $stmt->fetch();
+                
+                if ($utilisateur && password_verify($motDePasse, $utilisateur['mot_de_passe'])) {
+                    
+                    // Authentification reussie
+                    $_SESSION['id_utilisateur'] = $utilisateur['id_utilisateur'];
+                    $_SESSION['role'] = $utilisateur['role'];
+                    $_SESSION['nom'] = $utilisateur['nom'];
+                    $_SESSION['prenom'] = $utilisateur['prenom'];
+                    $_SESSION['email'] = $utilisateur['email'];
+                    
+                    // Redirection selon le role
+                    $redirection = [
+                        'admin' => '../admin/dashboard.php',
+                        'responsable' => '../responsable/dashboard.php',
+                        'agriculteur' => '../agriculteur/dashboard.php'
+                    ];
+                    header('Location: ' . $redirection[$utilisateur['role']]);
+                    exit;
+                    
+                } else {
+                    $erreur = 'Email ou mot de passe incorrect.';
+                }
+                
+            } catch (PDOException $e) {
+                $erreur = 'Erreur lors de la connexion à la base de données.';
+                error_log('Erreur SQL login: ' . $e->getMessage());
             }
-            exit;
         }
-
-        // 2. Si pas trouve, on cherche dans AGRICULTEUR
-        $stmt = $pdo->prepare("SELECT * FROM AGRICULTEUR WHERE email_agri = ?");
-        $stmt->execute([$email]);
-        $agriculteur = $stmt->fetch();
-
-        if ($agriculteur && password_verify($motDePasse, $agriculteur['mot_de_passe_agri'])) {
-            $_SESSION['id_agri'] = $agriculteur['id_agri'];
-            $_SESSION['nom_agri'] = $agriculteur['nom_agri'];
-            $_SESSION['prenom_agri'] = $agriculteur['prenom_agri'];
-            $_SESSION['id_coop_agri'] = $agriculteur['id_coop'];
-            $_SESSION['role'] = 'agriculteur';
-
-            header('Location: ../agriculteur/dashboard.php');
-            exit;
-        }
-
-        // 3. Si on arrive ici, aucune table n'a donne de resultat valide
-        $erreur = "Email ou mot de passe incorrect.";
     }
 }
+
+// Initialiser le token CSRF pour le formulaire
+initialiserCsrf();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Connexion - AgriGest Togo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriGest Togo - Connexion</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <div class="page-container">
-        <div class="card" style="max-width: 400px; margin: 80px auto;">
-            <h1>AgriGest Togo</h1>
-            <h2>Connexion</h2>
-
-            <?php if ($erreur): ?>
-                <div class="alerte-erreur"><?= htmlspecialchars($erreur) ?></div>
-            <?php endif; ?>
-
-            <form method="POST" class="form-card">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="mot_de_passe">Mot de passe</label>
-                    <input type="password" id="mot_de_passe" name="mot_de_passe" required>
-                </div>
-
-                <button type="submit" class="btn-primary">Se connecter</button>
-            </form>
-
-            <p style="margin-top: 20px;">
-                <a href="../index.php">Retour a l'accueil</a>
-            </p>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🌾 AgriGest Togo</h1>
+            <p>Gestion des Exploitations Agricoles</p>
+        </div>
+        
+        <?php if ($erreur): ?>
+            <div class="erreur">
+                <?php echo htmlspecialchars($erreur); ?>
+            </div>
+        <?php endif; ?>
+        
+        <form method="POST" action="">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    value="<?php echo htmlspecialchars($email); ?>" 
+                    required 
+                    autofocus
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required
+                >
+            </div>
+            
+            <!-- Token CSRF -->
+            <input 
+                type="hidden" 
+                name="csrf_token" 
+                value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>"
+            >
+            
+            <button type="submit">Se connecter</button>
+        </form>
+        
+        <div class="info-text">
+            Contactez l'administrateur pour créer un compte
         </div>
     </div>
 </body>

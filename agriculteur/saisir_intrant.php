@@ -1,201 +1,211 @@
 <?php
+/**
+ * agriculteur/saisir_intrant.php
+ * Enregistrement d'utilisation d'intrants
+ */
+
 session_start();
-require_once '../config/connexion.php';
-require_once '../includes/fonctions.php';
+require_once('../config/connexion.php');
+require_once('../includes/fonctions.php');
 
-if (!isset($_SESSION['id_agri']) || $_SESSION['role'] !== 'agriculteur') {
-    header('Location: ../auth/login.php');
-    exit;
-}
+exigerRole('agriculteur');
 
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
-function verifierCsrf() {
-    return isset($_POST['csrf_token']) && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
-}
-
+$id_agri = $_SESSION['id_utilisateur'];
+$plantations = [];
+$intrants = [];
 $message = '';
-$erreur  = '';
+$erreur = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_utilisation'])) {
+try {
+    // Récupérer les plantations de l'agriculteur
+    $stmt = $pdo->prepare(
+        "SELECT DISTINCT pl.id_plantation, pl.date_semis,
+                c.nom_culture, p.nom_parcelle
+         FROM PLANTATION pl
+         JOIN PARCELLE p ON pl.id_parcelle = p.id_parcelle
+         JOIN CULTURE c ON pl.id_culture = c.id_culture
+         WHERE p.id_agri = ?
+         ORDER BY pl.date_semis DESC"
+    );
+    $stmt->execute([$id_agri]);
+    $plantations = $stmt->fetchAll();
+    
+    // Récupérer tous les intrants disponibles
+    $stmt = $pdo->query(
+        "SELECT id_intrant, nom_intrant, type_intrant, unite_mesure
+         FROM INTRANT
+         ORDER BY nom_intrant ASC"
+    );
+    $intrants = $stmt->fetchAll();
+    
+} catch (PDOException $e) {
+    error_log('Erreur SQL saisir_intrant: ' . $e->getMessage());
+    $erreur = 'Erreur lors du chargement des données.';
+}
+
+// Traitement du formulaire
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifierCsrf()) {
-        $erreur = "Session expirée, veuillez recharger la page.";
+        $erreur = 'Token CSRF invalide.';
     } else {
-        $idPlantation    = nettoyer($_POST['id_plantation']);
-        $idIntrant       = nettoyer($_POST['id_intrant']);
-        $quantite        = $_POST['quantite_utilisee'];
-        $dateUtilisation = $_POST['date_utilisation'];
-
-        if (empty($idPlantation) || empty($idIntrant) || empty($quantite) || empty($dateUtilisation)) {
-            $erreur = "Veuillez remplir tous les champs.";
-        } elseif (!is_numeric($quantite) || $quantite <= 0) {
-            $erreur = "La quantité doit être un nombre positif.";
+        $id_plantation = nettoyer($_POST['id_plantation'] ?? '');
+        $id_intrant = nettoyer($_POST['id_intrant'] ?? '');
+        $quantite_utilisee = nettoyer($_POST['quantite_utilisee'] ?? '');
+        $date_utilisation = nettoyer($_POST['date_utilisation'] ?? '');
+        
+        // Validations
+        if (empty($id_plantation)) {
+            $erreur = 'Sélectionnez une plantation.';
+        } elseif (empty($id_intrant)) {
+            $erreur = 'Sélectionnez un intrant.';
+        } elseif (empty($quantite_utilisee) || !is_numeric($quantite_utilisee) || $quantite_utilisee <= 0) {
+            $erreur = 'La quantité doit être un nombre positif.';
+        } elseif (empty($date_utilisation)) {
+            $erreur = 'Saisissez la date d\'utilisation.';
         } else {
-            // Vérification : la plantation appartient bien à CET agriculteur
-            $stmt = $pdo->prepare("
-                SELECT COUNT(*) AS total FROM plantation pl
-                JOIN parcelle p ON pl.id_parcelle = p.id_parcelle
-                WHERE pl.id_plantation = ? AND p.id_agri = ?
-            ");
-            $stmt->execute([$idPlantation, $_SESSION['id_agri']]);
-            if ($stmt->fetch()['total'] == 0) {
-                $erreur = "Cette plantation ne vous appartient pas.";
-            } else {
-                try {
-                    // Vérifier doublon (clé primaire composite)
-                    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM utiliser WHERE id_plantation = ? AND id_intrant = ?");
-                    $stmt->execute([$idPlantation, $idIntrant]);
-                    if ($stmt->fetch()['total'] > 0) {
-                        $erreur = "Cet intrant a déjà été déclaré pour cette plantation.";
-                    } else {
-                        $stmt = $pdo->prepare("INSERT INTO utiliser (id_plantation, id_intrant, quantite_utilisee, date_utilisation) VALUES (?, ?, ?, ?)");
-                        $stmt->execute([$idPlantation, $idIntrant, $quantite, $dateUtilisation]);
-                        $message = "Utilisation d'intrant enregistrée avec succès.";
-                    }
-                } catch (PDOException $e) {
-                    $erreur = "Une erreur est survenue.";
-                    error_log("Erreur ajout utilisation intrant : " . $e->getMessage());
+            try {
+                // Vérifier que la plantation appartient à l'agriculteur
+                $stmt = $pdo->prepare(
+                    "SELECT pl.id_plantation FROM PLANTATION pl
+                     JOIN PARCELLE p ON pl.id_parcelle = p.id_parcelle
+                     WHERE pl.id_plantation = ? AND p.id_agri = ?"
+                );
+                $stmt->execute([$id_plantation, $id_agri]);
+                
+                if (!$stmt->fetch()) {
+                    $erreur = 'Plantation invalide.';
+                } else {
+                    // Insérer l'utilisation d'intrant
+                    $stmt = $pdo->prepare(
+                        "INSERT INTO UTILISER (id_plantation, id_intrant, quantite_utilisee, date_utilisation)
+                         VALUES (?, ?, ?, ?)"
+                    );
+                    $stmt->execute([$id_plantation, $id_intrant, $quantite_utilisee, $date_utilisation]);
+                    
+                    $message = 'Intrant enregistré avec succès !';
+                    // Réinitialiser le formulaire
+                    $_POST = [];
                 }
+            } catch (PDOException $e) {
+                error_log('Erreur insertion intrant: ' . $e->getMessage());
+                $erreur = 'Erreur lors de l\'enregistrement.';
             }
         }
     }
 }
 
-// Plantations de cet agriculteur uniquement
-$stmt = $pdo->prepare("
-    SELECT pl.id_plantation, p.nom_parcelle, c.nom_culture, pl.date_semis
-    FROM plantation pl
-    JOIN parcelle p ON pl.id_parcelle = p.id_parcelle
-    JOIN culture c ON pl.id_culture = c.id_culture
-    WHERE p.id_agri = ?
-    ORDER BY pl.date_semis DESC
-");
-$stmt->execute([$_SESSION['id_agri']]);
-$plantations = $stmt->fetchAll();
-
-$intrants = $pdo->query("SELECT * FROM intrant ORDER BY nom_intrant")->fetchAll();
-
-// Historique des utilisations
-$stmt = $pdo->prepare("
-    SELECT u.*, i.nom_intrant, i.unite_mesure, p.nom_parcelle, c.nom_culture
-    FROM utiliser u
-    JOIN intrant i ON u.id_intrant = i.id_intrant
-    JOIN plantation pl ON u.id_plantation = pl.id_plantation
-    JOIN parcelle p ON pl.id_parcelle = p.id_parcelle
-    JOIN culture c ON pl.id_culture = c.id_culture
-    WHERE p.id_agri = ?
-    ORDER BY u.date_utilisation DESC
-");
-$stmt->execute([$_SESSION['id_agri']]);
-$utilisations = $stmt->fetchAll();
+initialiserCsrf();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Déclarer un intrant - AgriGest Togo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saisir intrant - AgriGest Togo</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <div class="page-container">
-        <h1>Déclarer l'utilisation d'un intrant</h1>
-        <p><a href="dashboard.php">&larr; Retour à mon espace</a></p>
+    <div class="container">
+        <header>
+            <h1>🌾 AgriGest Togo - Agriculteur</h1>
+            <nav>
+                <a href="dashboard.php">Tableau de bord</a>
+                <a href="mes_parcelles.php">Mes parcelles</a>
+                <a href="saisir_intrant.php">Saisir intrant</a>
+                <a href="saisir_plantation.php">Saisir plantation</a>
+                <a href="saisir_recolte.php">Saisir récolte</a>
+                <a href="../auth/logout.php">Déconnexion</a>
+            </nav>
+        </header>
 
-        <?php if ($message): ?>
-            <div class="alerte-succes"><?= htmlspecialchars($message) ?></div>
-        <?php endif; ?>
-        <?php if ($erreur): ?>
-            <div class="alerte-erreur"><?= htmlspecialchars($erreur) ?></div>
-        <?php endif; ?>
-
-        <?php if (empty($plantations)): ?>
-            <div class="alerte-erreur">
-                Vous n'avez aucune plantation enregistrée. Allez d'abord
-                <a href="saisir_plantation.php">déclarer une mise en culture</a>.
+        <main>
+            <div class="dashboard-header">
+                <h2>Enregistrement d'intrant</h2>
+                <p>Renseignez l'utilisation d'un intrant sur une de vos plantations</p>
             </div>
-        <?php elseif (empty($intrants)): ?>
-            <div class="alerte-erreur">Aucun intrant n'est encore configuré. Contactez l'administrateur.</div>
-        <?php else: ?>
 
-        <div class="card">
-            <h2>Nouvelle utilisation d'intrant</h2>
-            <form method="POST" class="form-card">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-
-                <div class="form-group">
-                    <label for="id_plantation">Plantation concernée</label>
-                    <select id="id_plantation" name="id_plantation" required>
-                        <option value="">-- Choisir --</option>
-                        <?php foreach ($plantations as $p): ?>
-                            <option value="<?= htmlspecialchars($p['id_plantation']) ?>">
-                                <?= htmlspecialchars($p['nom_parcelle'] . ' — ' . $p['nom_culture'] . ' (' . $p['date_semis'] . ')') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+            <!-- ========== MESSAGES ========== -->
+            <?php if ($message): ?>
+                <div class="alert alert-success">
+                    <?php echo htmlspecialchars($message); ?>
                 </div>
-
-                <div class="form-group">
-                    <label for="id_intrant">Intrant utilisé</label>
-                    <select id="id_intrant" name="id_intrant" required>
-                        <option value="">-- Choisir --</option>
-                        <?php foreach ($intrants as $i): ?>
-                            <option value="<?= htmlspecialchars($i['id_intrant']) ?>">
-                                <?= htmlspecialchars($i['nom_intrant'] . ' (' . $i['unite_mesure'] . ')') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="quantite_utilisee">Quantité utilisée</label>
-                    <input type="number" id="quantite_utilisee" name="quantite_utilisee"
-                           step="0.01" min="0.01" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="date_utilisation">Date d'utilisation</label>
-                    <input type="date" id="date_utilisation" name="date_utilisation" required>
-                </div>
-
-                <button type="submit" name="ajouter_utilisation" class="btn-primary">Enregistrer</button>
-            </form>
-        </div>
-        <?php endif; ?>
-
-        <div class="card" style="margin-top: 30px;">
-            <h2>Historique de mes utilisations d'intrants</h2>
-            <?php if (empty($utilisations)): ?>
-                <p style="color:#888;">Aucune utilisation déclarée pour l'instant.</p>
-            <?php else: ?>
-            <table class="table-data">
-                <thead>
-                    <tr>
-                        <th>Parcelle</th>
-                        <th>Culture</th>
-                        <th>Intrant</th>
-                        <th>Quantité</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($utilisations as $u): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($u['nom_parcelle']) ?></td>
-                        <td><?= htmlspecialchars($u['nom_culture']) ?></td>
-                        <td><?= htmlspecialchars($u['nom_intrant']) ?></td>
-                        <td><?= htmlspecialchars($u['quantite_utilisee']) ?> <?= htmlspecialchars($u['unite_mesure']) ?></td>
-                        <td><?= htmlspecialchars($u['date_utilisation']) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
             <?php endif; ?>
-        </div>
+            
+            <?php if ($erreur): ?>
+                <div class="alert alert-danger">
+                    <?php echo htmlspecialchars($erreur); ?>
+                </div>
+            <?php endif; ?>
 
-        <p style="margin-top: 20px;"><a href="../auth/logout.php">Se déconnecter</a></p>
+            <!-- ========== FORMULAIRE ========== -->
+            <section class="management-section">
+                <div class="form-container">
+                    <form method="POST" action="">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        
+                        <!-- Sélection plantation -->
+                        <div class="form-group">
+                            <label for="id_plantation">Plantation *</label>
+                            <?php if (empty($plantations)): ?>
+                                <p class="form-help">Aucune plantation disponible. <a href="saisir_plantation.php">Créer une plantation</a></p>
+                            <?php else: ?>
+                                <select name="id_plantation" id="id_plantation" required>
+                                    <option value="">-- Sélectionner une plantation --</option>
+                                    <?php foreach ($plantations as $plt): ?>
+                                        <option value="<?php echo htmlspecialchars($plt['id_plantation']); ?>"
+                                            <?php echo (isset($_POST['id_plantation']) && $_POST['id_plantation'] === $plt['id_plantation']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($plt['nom_culture'] . ' - ' . $plt['nom_parcelle']); ?>
+                                            (<?php echo formaterDate($plt['date_semis']); ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Sélection intrant -->
+                        <div class="form-group">
+                            <label for="id_intrant">Intrant *</label>
+                            <select name="id_intrant" id="id_intrant" required>
+                                <option value="">-- Sélectionner un intrant --</option>
+                                <?php foreach ($intrants as $intrant): ?>
+                                    <option value="<?php echo htmlspecialchars($intrant['id_intrant']); ?>"
+                                        <?php echo (isset($_POST['id_intrant']) && $_POST['id_intrant'] === $intrant['id_intrant']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($intrant['nom_intrant'] . ' (' . $intrant['type_intrant'] . ')'); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Quantité utilisée -->
+                        <div class="form-group">
+                            <label for="quantite_utilisee">Quantité utilisée *</label>
+                            <input type="number" name="quantite_utilisee" id="quantite_utilisee" 
+                                   step="0.01" min="0" required
+                                   value="<?php echo htmlspecialchars($_POST['quantite_utilisee'] ?? ''); ?>"
+                                   placeholder="Ex: 10.5">
+                        </div>
+
+                        <!-- Date utilisation -->
+                        <div class="form-group">
+                            <label for="date_utilisation">Date d'utilisation *</label>
+                            <input type="date" name="date_utilisation" id="date_utilisation" required
+                                   value="<?php echo htmlspecialchars($_POST['date_utilisation'] ?? date('Y-m-d')); ?>">
+                        </div>
+
+                        <!-- Boutons -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn">Enregistrer</button>
+                            <a href="dashboard.php" class="btn btn-secondary">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+
+        <footer>
+            <p>&copy; 2024 AgriGest Togo - Gestion des Exploitations Agricoles</p>
+        </footer>
     </div>
 </body>
 </html>

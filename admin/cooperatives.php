@@ -1,7 +1,7 @@
 <?php
 /**
- * admin/zones.php
- * Gestion des zones agroécologiques par l'administrateur
+ * admin/cooperatives.php
+ * Gestion des coopératives par l'administrateur
  */
 
 session_start();
@@ -13,7 +13,7 @@ exigerRole('admin');
 $message = '';
 $erreur = '';
 $action = $_GET['action'] ?? 'list';
-$idZone = $_GET['id'] ?? null;
+$idCoop = $_GET['id'] ?? null;
 
 // ==================== TRAITEMENT DES ACTIONS ====================
 
@@ -27,29 +27,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         if ($actionForm === 'create') {
             
-            $nomZone = nettoyer($_POST['nom_zone'] ?? '');
+            $nomCoop = nettoyer($_POST['nom_coop'] ?? '');
+            $localisationCoop = nettoyer($_POST['localisation_coop'] ?? '');
             
-            if (empty($nomZone)) {
-                $erreur = 'Le nom de la zone est obligatoire.';
+            if (empty($nomCoop) || empty($localisationCoop)) {
+                $erreur = 'Tous les champs sont obligatoires.';
             } else {
                 try {
-                    $idZoneNouv = genererCodeSimple($pdo, 'ZONE_AGROECOLOGIQUE', 'ZON');
+                    $idCoopNouv = genererCodeSimple($pdo, 'COOPERATIVE', 'COP');
                     
                     $stmt = $pdo->prepare(
-                        "INSERT INTO ZONE_AGROECOLOGIQUE (id_zone, nom_zone)
-                         VALUES (?, ?)"
+                        "INSERT INTO COOPERATIVE (id_coop, nom_coop, localisation_coop)
+                         VALUES (?, ?, ?)"
                     );
-                    $stmt->execute([$idZoneNouv, $nomZone]);
+                    $stmt->execute([$idCoopNouv, $nomCoop, $localisationCoop]);
                     
-                    $message = "Zone créée avec succès (ID: $idZoneNouv)";
+                    $message = "Coopérative créée avec succès (ID: $idCoopNouv)";
                     $action = 'list';
                     
                 } catch (PDOException $e) {
                     if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
-                        $erreur = 'Cette zone existe déjà.';
+                        $erreur = 'Cette coopérative existe déjà.';
                     } else {
                         $erreur = 'Erreur lors de la création.';
-                        error_log('Erreur SQL create zone: ' . $e->getMessage());
+                        error_log('Erreur SQL create cooperative: ' . $e->getMessage());
                     }
                 }
             }
@@ -57,58 +58,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         elseif ($actionForm === 'update') {
             
-            $idZoneUpdate = nettoyer($_POST['id_zone'] ?? '');
-            $nomZone = nettoyer($_POST['nom_zone'] ?? '');
+            $idCoopUpdate = nettoyer($_POST['id_coop'] ?? '');
+            $nomCoop = nettoyer($_POST['nom_coop'] ?? '');
+            $localisationCoop = nettoyer($_POST['localisation_coop'] ?? '');
             
-            if (empty($idZoneUpdate) || empty($nomZone)) {
+            if (empty($idCoopUpdate) || empty($nomCoop) || empty($localisationCoop)) {
                 $erreur = 'Tous les champs sont obligatoires.';
             } else {
                 try {
                     $stmt = $pdo->prepare(
-                        "UPDATE ZONE_AGROECOLOGIQUE 
-                         SET nom_zone = ? 
-                         WHERE id_zone = ?"
+                        "UPDATE COOPERATIVE 
+                         SET nom_coop = ?, localisation_coop = ? 
+                         WHERE id_coop = ?"
                     );
-                    $stmt->execute([$nomZone, $idZoneUpdate]);
+                    $stmt->execute([$nomCoop, $localisationCoop, $idCoopUpdate]);
                     
-                    $message = "Zone modifiée avec succès";
+                    $message = "Coopérative modifiée avec succès";
                     $action = 'list';
                     
                 } catch (PDOException $e) {
-                    if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
-                        $erreur = 'Cette zone existe déjà.';
-                    } else {
-                        $erreur = 'Erreur lors de la modification.';
-                        error_log('Erreur SQL update zone: ' . $e->getMessage());
-                    }
+                    $erreur = 'Erreur lors de la modification.';
+                    error_log('Erreur SQL update cooperative: ' . $e->getMessage());
                 }
             }
         }
         
         elseif ($actionForm === 'delete') {
             
-            $idZoneDelete = nettoyer($_POST['id_zone_delete'] ?? '');
+            $idCoopDelete = nettoyer($_POST['id_coop_delete'] ?? '');
             
             try {
-                // Verifier si la zone est utilisee dans des parcelles
-                $stmtCheck = $pdo->prepare("SELECT COUNT(*) AS total FROM PARCELLE WHERE id_zone = ?");
-                $stmtCheck->execute([$idZoneDelete]);
-                $result = $stmtCheck->fetch();
+                // Verifier si la cooperative est utilisee
+                $stmtCheck = $pdo->prepare("SELECT COUNT(*) AS total FROM RESPONSABLE WHERE id_coop = ?");
+                $stmtCheck->execute([$idCoopDelete]);
+                $countResp = $stmtCheck->fetch()['total'];
                 
-                if ($result['total'] > 0) {
-                    $erreur = 'Cette zone est utilisée dans des parcelles et ne peut pas être supprimée.';
+                $stmtCheck = $pdo->prepare("SELECT COUNT(*) AS total FROM AGRICULTEUR WHERE id_coop = ?");
+                $stmtCheck->execute([$idCoopDelete]);
+                $countAgri = $stmtCheck->fetch()['total'];
+                
+                if ($countResp > 0 || $countAgri > 0) {
+                    $erreur = 'Cette coopérative a des responsables ou agriculteurs et ne peut pas être supprimée.';
                 } else {
-                    // Supprimer la zone
-                    $stmtDelete = $pdo->prepare("DELETE FROM ZONE_AGROECOLOGIQUE WHERE id_zone = ?");
-                    $stmtDelete->execute([$idZoneDelete]);
+                    // Supprimer la cooperative
+                    $stmtDelete = $pdo->prepare("DELETE FROM COOPERATIVE WHERE id_coop = ?");
+                    $stmtDelete->execute([$idCoopDelete]);
                     
-                    $message = "Zone supprimée avec succès";
+                    $message = "Coopérative supprimée avec succès";
                     $action = 'list';
                 }
                 
             } catch (PDOException $e) {
                 $erreur = 'Erreur lors de la suppression.';
-                error_log('Erreur SQL delete zone: ' . $e->getMessage());
+                error_log('Erreur SQL delete cooperative: ' . $e->getMessage());
             }
         }
     }
@@ -123,7 +125,7 @@ initialiserCsrf();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Zones Agroécologiques - AgriGest Togo</title>
+    <title>Gestion des Coopératives - AgriGest Togo</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
@@ -143,7 +145,7 @@ initialiserCsrf();
         </header>
 
         <main>
-            <h2>Gestion des Zones Agroécologiques</h2>
+            <h2>Gestion des Coopératives</h2>
 
             <?php if ($message): ?>
                 <div class="message-success">
@@ -157,50 +159,52 @@ initialiserCsrf();
                 </div>
             <?php endif; ?>
 
-            <!-- ========== LISTE DES ZONES ========== -->
+            <!-- ========== LISTE DES COOPERATIVES ========== -->
             <?php if ($action === 'list'): ?>
                 
                 <div class="actions-bar">
-                    <a href="?action=create" class="btn btn-primary">+ Ajouter une zone</a>
+                    <a href="?action=create" class="btn btn-primary">+ Ajouter une coopérative</a>
                 </div>
 
                 <?php
                 try {
                     $stmt = $pdo->query(
-                        "SELECT id_zone, nom_zone FROM ZONE_AGROECOLOGIQUE ORDER BY nom_zone"
+                        "SELECT id_coop, nom_coop, localisation_coop FROM COOPERATIVE ORDER BY nom_coop"
                     );
-                    $zones = $stmt->fetchAll();
+                    $cooperatives = $stmt->fetchAll();
                     
-                    if (!empty($zones)):
+                    if (!empty($cooperatives)):
                 ?>
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Nom de la zone</th>
-                                    <th>Nombre de parcelles</th>
+                                    <th>Nom</th>
+                                    <th>Localisation</th>
+                                    <th>Nombre d'agriculteurs</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($zones as $zone): ?>
+                                <?php foreach ($cooperatives as $coop): ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($zone['id_zone']); ?></td>
-                                        <td><?php echo htmlspecialchars($zone['nom_zone']); ?></td>
+                                        <td><?php echo htmlspecialchars($coop['id_coop']); ?></td>
+                                        <td><?php echo htmlspecialchars($coop['nom_coop']); ?></td>
+                                        <td><?php echo htmlspecialchars($coop['localisation_coop']); ?></td>
                                         <td>
                                             <?php
-                                            $stmtCount = $pdo->prepare("SELECT COUNT(*) AS total FROM PARCELLE WHERE id_zone = ?");
-                                            $stmtCount->execute([$zone['id_zone']]);
+                                            $stmtCount = $pdo->prepare("SELECT COUNT(*) AS total FROM AGRICULTEUR WHERE id_coop = ?");
+                                            $stmtCount->execute([$coop['id_coop']]);
                                             $count = $stmtCount->fetch()['total'];
                                             echo $count;
                                             ?>
                                         </td>
                                         <td>
-                                            <a href="?action=edit&id=<?php echo urlencode($zone['id_zone']); ?>" class="btn btn-small btn-edit">Modifier</a>
+                                            <a href="?action=edit&id=<?php echo urlencode($coop['id_coop']); ?>" class="btn btn-small btn-edit">Modifier</a>
                                             <form method="POST" class="form-delete-inline" onsubmit="return confirm('Êtes-vous sûr ?');">
                                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                                 <input type="hidden" name="action" value="delete">
-                                                <input type="hidden" name="id_zone_delete" value="<?php echo htmlspecialchars($zone['id_zone']); ?>">
+                                                <input type="hidden" name="id_coop_delete" value="<?php echo htmlspecialchars($coop['id_coop']); ?>">
                                                 <button type="submit" class="btn btn-small btn-delete">Supprimer</button>
                                             </form>
                                         </td>
@@ -210,11 +214,11 @@ initialiserCsrf();
                         </table>
                 <?php 
                     else:
-                        echo '<p class="no-data">Aucune zone agroécologique enregistrée.</p>';
+                        echo '<p class="no-data">Aucune coopérative enregistrée.</p>';
                     endif;
                 } catch (PDOException $e) {
-                    echo '<div class="message-erreur">Erreur lors du chargement des zones.</div>';
-                    error_log('Erreur SQL list zone: ' . $e->getMessage());
+                    echo '<div class="message-erreur">Erreur lors du chargement des coopératives.</div>';
+                    error_log('Erreur SQL list cooperative: ' . $e->getMessage());
                 }
                 ?>
 
@@ -224,11 +228,16 @@ initialiserCsrf();
                 <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
 
                 <form method="POST" class="form-container">
-                    <h3>Créer une nouvelle zone agroécologique</h3>
+                    <h3>Créer une nouvelle coopérative</h3>
 
                     <div class="form-group">
-                        <label for="nom_zone">Nom de la zone</label>
-                        <input type="text" id="nom_zone" name="nom_zone" placeholder="Ex: Région Maritime, Région des Savanes..." required>
+                        <label for="nom_coop">Nom de la coopérative</label>
+                        <input type="text" id="nom_coop" name="nom_coop" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="localisation_coop">Localisation</label>
+                        <input type="text" id="localisation_coop" name="localisation_coop" placeholder="Ex: Lomé, Région Maritime..." required>
                     </div>
 
                     <input type="hidden" name="action" value="create">
@@ -238,32 +247,37 @@ initialiserCsrf();
                 </form>
 
             <!-- ========== FORMULAIRE MODIFICATION ========== -->
-            <?php elseif ($action === 'edit' && $idZone): ?>
+            <?php elseif ($action === 'edit' && $idCoop): ?>
                 
                 <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
 
                 <?php
                 try {
                     $stmtEdit = $pdo->prepare(
-                        "SELECT id_zone, nom_zone FROM ZONE_AGROECOLOGIQUE WHERE id_zone = ?"
+                        "SELECT id_coop, nom_coop, localisation_coop FROM COOPERATIVE WHERE id_coop = ?"
                     );
-                    $stmtEdit->execute([$idZone]);
-                    $zoneEdit = $stmtEdit->fetch();
+                    $stmtEdit->execute([$idCoop]);
+                    $coopEdit = $stmtEdit->fetch();
 
-                    if ($zoneEdit):
+                    if ($coopEdit):
                 ?>
                         <form method="POST" class="form-container">
-                            <h3>Modifier la zone agroécologique</h3>
+                            <h3>Modifier la coopérative</h3>
 
                             <div class="form-group">
-                                <label for="id_zone_display">ID (lecture seule)</label>
-                                <input type="text" id="id_zone_display" value="<?php echo htmlspecialchars($zoneEdit['id_zone']); ?>" disabled>
-                                <input type="hidden" name="id_zone" value="<?php echo htmlspecialchars($zoneEdit['id_zone']); ?>">
+                                <label for="id_coop_display">ID (lecture seule)</label>
+                                <input type="text" id="id_coop_display" value="<?php echo htmlspecialchars($coopEdit['id_coop']); ?>" disabled>
+                                <input type="hidden" name="id_coop" value="<?php echo htmlspecialchars($coopEdit['id_coop']); ?>">
                             </div>
 
                             <div class="form-group">
-                                <label for="nom_zone">Nom de la zone</label>
-                                <input type="text" id="nom_zone" name="nom_zone" value="<?php echo htmlspecialchars($zoneEdit['nom_zone']); ?>" required>
+                                <label for="nom_coop">Nom de la coopérative</label>
+                                <input type="text" id="nom_coop" name="nom_coop" value="<?php echo htmlspecialchars($coopEdit['nom_coop']); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="localisation_coop">Localisation</label>
+                                <input type="text" id="localisation_coop" name="localisation_coop" value="<?php echo htmlspecialchars($coopEdit['localisation_coop']); ?>" required>
                             </div>
 
                             <input type="hidden" name="action" value="update">
@@ -273,11 +287,11 @@ initialiserCsrf();
                         </form>
                 <?php 
                     else:
-                        echo '<div class="message-erreur">Zone non trouvée.</div>';
+                        echo '<div class="message-erreur">Coopérative non trouvée.</div>';
                     endif;
                 } catch (PDOException $e) {
                     echo '<div class="message-erreur">Erreur lors du chargement.</div>';
-                    error_log('Erreur SQL edit zone: ' . $e->getMessage());
+                    error_log('Erreur SQL edit cooperative: ' . $e->getMessage());
                 }
                 ?>
 

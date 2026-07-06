@@ -1,182 +1,303 @@
 <?php
+/**
+ * admin/cultures.php
+ * Gestion des cultures par l'administrateur
+ */
+
 session_start();
-require_once '../config/connexion.php';
-require_once '../includes/fonctions.php';
+require_once('../config/connexion.php');
+require_once('../includes/fonctions.php');
 
-if (!isset($_SESSION['id_utilisateur']) || $_SESSION['role'] !== 'admin') {
-    header('Location: ../auth/login.php');
-    exit;
-}
-
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
-function verifierCsrf()
-{
-    return isset($_POST['csrf_token']) && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
-}
+exigerRole('admin');
 
 $message = '';
 $erreur = '';
+$action = $_GET['action'] ?? 'list';
+$idCulture = $_GET['id'] ?? null;
 
-// TRAITEMENT : Ajout d'une culture
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_culture'])) {
+// ==================== TRAITEMENT DES ACTIONS ====================
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    
     if (!verifierCsrf()) {
-        $erreur = "Session expirée, veuillez recharger la page.";
+        $erreur = 'Erreur de sécurité (CSRF).';
     } else {
-        $nomCulture = nettoyer($_POST['nom_culture']);
-        $dureeCycle = $_POST['duree_cycle'];
-
-        if (empty($nomCulture) || empty($dureeCycle)) {
-            $erreur = "Veuillez remplir tous les champs.";
-        } elseif (!is_numeric($dureeCycle) || $dureeCycle <= 0) {
-            $erreur = "La durée du cycle doit être un nombre positif.";
-        } else {
+        
+        $actionForm = nettoyer($_POST['action']);
+        
+        if ($actionForm === 'create') {
+            
+            $nomCulture = nettoyer($_POST['nom_culture'] ?? '');
+            $dureeCycle = $_POST['duree_cycle'] ?? '';
+            
+            if (empty($nomCulture) || empty($dureeCycle)) {
+                $erreur = 'Tous les champs sont obligatoires.';
+            } elseif (!is_numeric($dureeCycle) || $dureeCycle <= 0) {
+                $erreur = 'La durée du cycle doit être un nombre positif.';
+            } else {
+                try {
+                    $idCultureNouv = genererCodeSimple($pdo, 'CULTURE', 'CUL');
+                    
+                    $stmt = $pdo->prepare(
+                        "INSERT INTO CULTURE (id_culture, nom_culture, duree_cycle)
+                         VALUES (?, ?, ?)"
+                    );
+                    $stmt->execute([$idCultureNouv, $nomCulture, $dureeCycle]);
+                    
+                    $message = "Culture créée avec succès (ID: $idCultureNouv)";
+                    $action = 'list';
+                    
+                } catch (PDOException $e) {
+                    if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                        $erreur = 'Cette culture existe déjà.';
+                    } else {
+                        $erreur = 'Erreur lors de la création.';
+                        error_log('Erreur SQL create culture: ' . $e->getMessage());
+                    }
+                }
+            }
+        }
+        
+        elseif ($actionForm === 'update') {
+            
+            $idCultureUpdate = nettoyer($_POST['id_culture'] ?? '');
+            $nomCulture = nettoyer($_POST['nom_culture'] ?? '');
+            $dureeCycle = $_POST['duree_cycle'] ?? '';
+            
+            if (empty($idCultureUpdate) || empty($nomCulture) || empty($dureeCycle)) {
+                $erreur = 'Tous les champs sont obligatoires.';
+            } elseif (!is_numeric($dureeCycle) || $dureeCycle <= 0) {
+                $erreur = 'La durée du cycle doit être un nombre positif.';
+            } else {
+                try {
+                    $stmt = $pdo->prepare(
+                        "UPDATE CULTURE 
+                         SET nom_culture = ?, duree_cycle = ? 
+                         WHERE id_culture = ?"
+                    );
+                    $stmt->execute([$nomCulture, $dureeCycle, $idCultureUpdate]);
+                    
+                    $message = "Culture modifiée avec succès";
+                    $action = 'list';
+                    
+                } catch (PDOException $e) {
+                    if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                        $erreur = 'Cette culture existe déjà.';
+                    } else {
+                        $erreur = 'Erreur lors de la modification.';
+                        error_log('Erreur SQL update culture: ' . $e->getMessage());
+                    }
+                }
+            }
+        }
+        
+        elseif ($actionForm === 'delete') {
+            
+            $idCultureDelete = nettoyer($_POST['id_culture_delete'] ?? '');
+            
             try {
-                $nouvelId = genererCodeSimple($pdo, 'CULTURE', 'CUL');
-                $stmt = $pdo->prepare("INSERT INTO CULTURE (id_culture, nom_culture, duree_cycle) VALUES (?, ?, ?)");
-                $stmt->execute([$nouvelId, $nomCulture, $dureeCycle]);
-                $message = "Culture ajoutée avec succès (code : $nouvelId).";
+                // Verifier si la culture est utilisee dans des plantations
+                $stmtCheck = $pdo->prepare("SELECT COUNT(*) AS total FROM PLANTATION WHERE id_culture = ?");
+                $stmtCheck->execute([$idCultureDelete]);
+                $result = $stmtCheck->fetch();
+                
+                if ($result['total'] > 0) {
+                    $erreur = 'Cette culture est utilisée dans des plantations et ne peut pas être supprimée.';
+                } else {
+                    // Supprimer la culture
+                    $stmtDelete = $pdo->prepare("DELETE FROM CULTURE WHERE id_culture = ?");
+                    $stmtDelete->execute([$idCultureDelete]);
+                    
+                    $message = "Culture supprimée avec succès";
+                    $action = 'list';
+                }
+                
             } catch (PDOException $e) {
-                $erreur = "Cette culture existe peut-être déjà.";
-                error_log("Erreur ajout culture : " . $e->getMessage());
+                $erreur = 'Erreur lors de la suppression.';
+                error_log('Erreur SQL delete culture: ' . $e->getMessage());
             }
         }
     }
 }
 
-// TRAITEMENT : Modification d'une culture
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_culture'])) {
-    if (!verifierCsrf()) {
-        $erreur = "Session expirée, veuillez recharger la page.";
-    } else {
-        $idCulture = $_POST['id_culture'];
-        $nomCulture = nettoyer($_POST['nom_culture']);
-        $dureeCycle = $_POST['duree_cycle'];
+initialiserCsrf();
 
-        // Correction ici : Ajout des || manquants
-        if (empty($nomCulture) || empty($dureeCycle) || !is_numeric($dureeCycle) || $dureeCycle <= 0) {
-            $erreur = "Données invalides.";
-        } else {
-            $stmt = $pdo->prepare("UPDATE CULTURE SET nom_culture = ?, duree_cycle = ? WHERE id_culture = ?");
-            $stmt->execute([$nomCulture, $dureeCycle, $idCulture]);
-            $message = "Culture modifiée avec succès.";
-        }
-    }
-}
-
-// TRAITEMENT : Suppression d'une culture
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimer_culture'])) {
-    if (!verifierCsrf()) {
-        $erreur = "Session expirée, veuillez recharger la page.";
-    } else {
-        try {
-            $stmt = $pdo->prepare("DELETE FROM CULTURE WHERE id_culture = ?");
-            $stmt->execute([$_POST['id_culture']]);
-            $message = "Culture supprimée avec succès.";
-        } catch (PDOException $e) {
-            $erreur = "Impossible de supprimer : cette culture est utilisée dans des plantations.";
-        }
-    }
-}
-
-$cultures = $pdo->query("SELECT * FROM CULTURE ORDER BY nom_culture")->fetchAll();
+// ==================== AFFICHAGE ====================
 ?>
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Cultures - AgriGest Togo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-
 <body>
-    <div class="page-container">
-        <h1>Gestion des cultures</h1>
-        <p><a href="dashboard.php">&larr; Retour au tableau de bord</a></p>
+    <div class="container">
+        <header>
+            <h1>🌾 AgriGest Togo - Admin</h1>
+            <nav>
+                <a href="dashboard.php">Tableau de bord</a>
+                <a href="agriculteurs.php">Agriculteurs</a>
+                <a href="cultures.php">Cultures</a>
+                <a href="cooperatives.php">Coopératives</a>
+                <a href="../auth/logout.php">Déconnexion</a>
+            </nav>
+        </header>
 
-        <?php if ($message): ?>
-            <div class="alerte-succes"><?= htmlspecialchars($message) ?></div>
-        <?php endif; ?>
-        <?php if ($erreur): ?>
-            <div class="alerte-erreur"><?= htmlspecialchars($erreur) ?></div>
-        <?php endif; ?>
+        <main>
+            <h2>Gestion des Cultures</h2>
 
-        <div class="card">
-            <h2>Cultures existantes</h2>
-            <table class="table-data">
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Nom</th>
-                        <th>Durée cycle (jours)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($cultures as $c): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($c['id_culture']) ?></td>
-                            <td><?= htmlspecialchars($c['nom_culture']) ?></td>
-                            <td><?= htmlspecialchars($c['duree_cycle']) ?></td>
-                            <td>
-                                <button type="button" class="btn-secondary" onclick="afficherFormModif('<?= htmlspecialchars($c['id_culture']) ?>', '<?= htmlspecialchars($c['nom_culture']) ?>', '<?= htmlspecialchars($c['duree_cycle']) ?>')">Modifier</button>
-                                <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette culture ?');">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                                    <input type="hidden" name="id_culture" value="<?= htmlspecialchars($c['id_culture']) ?>">
-                                    <button type="submit" name="supprimer_culture" class="btn-danger">Supprimer</button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-
-            <h3 id="titre_form">Ajouter une culture</h3>
-            <form method="POST" class="form-card" id="form_culture">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                <input type="hidden" name="id_culture" id="champ_id" value="">
-
-                <div class="form-group">
-                    <label for="nom_culture">Nom de la culture</label>
-                    <input type="text" id="nom_culture" name="nom_culture" maxlength="50" required>
+            <?php if ($message): ?>
+                <div class="message-success">
+                    <?php echo htmlspecialchars($message); ?>
                 </div>
-                <div class="form-group">
-                    <label for="duree_cycle">Durée du cycle (jours)</label>
-                    <input type="number" id="duree_cycle" name="duree_cycle" min="1" required>
+            <?php endif; ?>
+
+            <?php if ($erreur): ?>
+                <div class="message-erreur">
+                    <?php echo htmlspecialchars($erreur); ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- ========== LISTE DES CULTURES ========== -->
+            <?php if ($action === 'list'): ?>
+                
+                <div class="actions-bar">
+                    <a href="?action=create" class="btn btn-primary">+ Ajouter une culture</a>
                 </div>
 
-                <button type="submit" name="ajouter_culture" id="bouton_submit" class="btn-primary">Ajouter</button>
-                <button type="button" class="btn-secondary" onclick="reinitialiser()" id="bouton_annuler" style="display:none;">Annuler</button>
-            </form>
-        </div>
+                <?php
+                try {
+                    $stmt = $pdo->query(
+                        "SELECT id_culture, nom_culture, duree_cycle
+                         FROM CULTURE
+                         ORDER BY nom_culture"
+                    );
+                    $cultures = $stmt->fetchAll();
+                    
+                    if (!empty($cultures)):
+                ?>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom</th>
+                                    <th>Durée du cycle (jours)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($cultures as $culture): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($culture['id_culture']); ?></td>
+                                        <td><?php echo htmlspecialchars($culture['nom_culture']); ?></td>
+                                        <td><?php echo formaterNombre($culture['duree_cycle'], 2); ?></td>
+                                        <td>
+                                            <a href="?action=edit&id=<?php echo urlencode($culture['id_culture']); ?>" class="btn btn-small btn-edit">Modifier</a>
+                                            <form method="POST" class="form-delete-inline" onsubmit="return confirm('Êtes-vous sûr ?');">
+                                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id_culture_delete" value="<?php echo htmlspecialchars($culture['id_culture']); ?>">
+                                                <button type="submit" class="btn btn-small btn-delete">Supprimer</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                <?php 
+                    else:
+                        echo '<p class="no-data">Aucune culture enregistrée.</p>';
+                    endif;
+                } catch (PDOException $e) {
+                    echo '<div class="message-erreur">Erreur lors du chargement des cultures.</div>';
+                    error_log('Erreur SQL list culture: ' . $e->getMessage());
+                }
+                ?>
 
-        <p style="margin-top: 20px;"><a href="../auth/logout.php">Se déconnecter</a></p>
+            <!-- ========== FORMULAIRE CREATION ========== -->
+            <?php elseif ($action === 'create'): ?>
+                
+                <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
+
+                <form method="POST" class="form-container">
+                    <h3>Créer une nouvelle culture</h3>
+
+                    <div class="form-group">
+                        <label for="nom_culture">Nom de la culture</label>
+                        <input type="text" id="nom_culture" name="nom_culture" placeholder="Ex: Maïs, Riz, Haricot..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duree_cycle">Durée du cycle (en jours)</label>
+                        <input type="number" id="duree_cycle" name="duree_cycle" placeholder="Ex: 120" step="0.01" min="0" required>
+                    </div>
+
+                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+
+                    <button type="submit" class="btn btn-primary">Créer</button>
+                </form>
+
+            <!-- ========== FORMULAIRE MODIFICATION ========== -->
+            <?php elseif ($action === 'edit' && $idCulture): ?>
+                
+                <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
+
+                <?php
+                try {
+                    $stmtEdit = $pdo->prepare(
+                        "SELECT id_culture, nom_culture, duree_cycle
+                         FROM CULTURE
+                         WHERE id_culture = ?"
+                    );
+                    $stmtEdit->execute([$idCulture]);
+                    $cultureEdit = $stmtEdit->fetch();
+
+                    if ($cultureEdit):
+                ?>
+                        <form method="POST" class="form-container">
+                            <h3>Modifier la culture</h3>
+
+                            <div class="form-group">
+                                <label for="id_culture_display">ID (lecture seule)</label>
+                                <input type="text" id="id_culture_display" value="<?php echo htmlspecialchars($cultureEdit['id_culture']); ?>" disabled>
+                                <input type="hidden" name="id_culture" value="<?php echo htmlspecialchars($cultureEdit['id_culture']); ?>">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="nom_culture">Nom de la culture</label>
+                                <input type="text" id="nom_culture" name="nom_culture" value="<?php echo htmlspecialchars($cultureEdit['nom_culture']); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="duree_cycle">Durée du cycle (en jours)</label>
+                                <input type="number" id="duree_cycle" name="duree_cycle" value="<?php echo htmlspecialchars($cultureEdit['duree_cycle']); ?>" step="0.01" min="0" required>
+                            </div>
+
+                            <input type="hidden" name="action" value="update">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+
+                            <button type="submit" class="btn btn-primary">Modifier</button>
+                        </form>
+                <?php 
+                    else:
+                        echo '<div class="message-erreur">Culture non trouvée.</div>';
+                    endif;
+                } catch (PDOException $e) {
+                    echo '<div class="message-erreur">Erreur lors du chargement.</div>';
+                    error_log('Erreur SQL edit culture: ' . $e->getMessage());
+                }
+                ?>
+
+            <?php endif; ?>
+
+        </main>
+
+        <footer>
+            <p>&copy; 2024 AgriGest Togo - Gestion des Exploitations Agricoles</p>
+        </footer>
     </div>
-
-    <script>
-        function afficherFormModif(id, nom, duree) {
-            document.getElementById('titre_form').innerText = 'Modifier la culture';
-            document.getElementById('champ_id').value = id;
-            document.getElementById('nom_culture').value = nom;
-            document.getElementById('duree_cycle').value = duree;
-            document.getElementById('bouton_submit').name = 'modifier_culture';
-            document.getElementById('bouton_submit').innerText = 'Enregistrer';
-            document.getElementById('bouton_annuler').style.display = 'inline';
-        }
-
-        function reinitialiser() {
-            document.getElementById('titre_form').innerText = 'Ajouter une culture';
-            document.getElementById('form_culture').reset();
-            document.getElementById('champ_id').value = '';
-            document.getElementById('bouton_submit').name = 'ajouter_culture';
-            document.getElementById('bouton_submit').innerText = 'Ajouter';
-            document.getElementById('bouton_annuler').style.display = 'none';
-        }
-    </script>
 </body>
-
 </html>
