@@ -14,18 +14,15 @@ $id_agri = $_SESSION['id_utilisateur'];
 $stats = [];
 
 try {
-    // Nombre de parcelles
     $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM PARCELLE WHERE id_agri = ?");
     $stmt->execute([$id_agri]);
     $stats['parcelles'] = $stmt->fetch()['total'];
     
-    // Superficie totale
     $stmt = $pdo->prepare("SELECT SUM(superficie) AS total FROM PARCELLE WHERE id_agri = ?");
     $stmt->execute([$id_agri]);
     $result = $stmt->fetch();
     $stats['superficie'] = $result['total'] ?? 0;
     
-    // Nombre de plantations actives
     $stmt = $pdo->prepare(
         "SELECT COUNT(pl.id_plantation) AS total 
          FROM PLANTATION pl
@@ -35,7 +32,6 @@ try {
     $stmt->execute([$id_agri]);
     $stats['plantations'] = $stmt->fetch()['total'];
     
-    // Nombre de récoltes
     $stmt = $pdo->prepare(
         "SELECT COUNT(r.id_recolte) AS total 
          FROM RECOLTE r
@@ -46,7 +42,6 @@ try {
     $stmt->execute([$id_agri]);
     $stats['recoltes'] = $stmt->fetch()['total'];
     
-    // Nombre de zones où il cultive
     $stmt = $pdo->prepare(
         "SELECT COUNT(DISTINCT z.id_zone) AS total 
          FROM ZONE_AGROECOLOGIQUE z
@@ -56,7 +51,6 @@ try {
     $stmt->execute([$id_agri]);
     $stats['zones'] = $stmt->fetch()['total'];
     
-    // Nombre de cultures
     $stmt = $pdo->prepare(
         "SELECT COUNT(DISTINCT c.id_culture) AS total 
          FROM CULTURE c
@@ -79,20 +73,31 @@ initialiserCsrf();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de bord Agriculteur - AgriGest Togo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🌾 AgriGest Togo - Agriculteur</h1>
-            <nav>
-                <a href="dashboard.php">Tableau de bord</a>
-                <a href="mes_parcelles.php">Mes parcelles</a>
-                <a href="saisir_intrant.php">Saisir intrant</a>
-                <a href="saisir_plantation.php">Saisir plantation</a>
-                <a href="saisir_recolte.php">Saisir récolte</a>
-                <a href="../auth/logout.php">Déconnexion</a>
-            </nav>
+            <div class="header-inner">
+                <h1>🌾 AgriGest Togo - Agriculteur</h1>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <nav id="navMenu">
+                    <a href="dashboard.php">Tableau de bord</a>
+                    <a href="mes_parcelles.php">Mes parcelles</a>
+                    <a href="saisir_intrant.php">Saisir intrant</a>
+                    <a href="saisir_plantation.php">Saisir plantation</a>
+                    <a href="saisir_recolte.php">Saisir récolte</a>
+                    <a href="../auth/logout.php">Déconnexion</a>
+                </nav>
+            </div>
         </header>
 
         <main>
@@ -101,7 +106,6 @@ initialiserCsrf();
                 <p>Bienvenue, <?php echo htmlspecialchars($_SESSION['prenom'] . ' ' . $_SESSION['nom']); ?></p>
             </div>
 
-            <!-- ========== STATISTIQUES PRINCIPALES ========== -->
             <section class="statistics">
                 <h3>Aperçu de vos exploitations</h3>
                 
@@ -144,7 +148,6 @@ initialiserCsrf();
                 </div>
             </section>
 
-            <!-- ========== ACCES RAPIDES ========== -->
             <section class="management-section">
                 <h3>Actions rapides</h3>
                 
@@ -176,7 +179,6 @@ initialiserCsrf();
                 </div>
             </section>
 
-            <!-- ========== INFORMATIONS ========== -->
             <section class="management-section">
                 <h3>Informations</h3>
                 
@@ -193,5 +195,20 @@ initialiserCsrf();
             <p>&copy; 2024 AgriGest Togo - Gestion des Exploitations Agricoles</p>
         </footer>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navMenu = document.getElementById('navMenu');
+
+            if (hamburgerBtn && navMenu) {
+                hamburgerBtn.addEventListener('click', function() {
+                    const isOpen = this.classList.toggle('active');
+                    navMenu.classList.toggle('open');
+                    this.setAttribute('aria-expanded', isOpen);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

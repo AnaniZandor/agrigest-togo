@@ -109,20 +109,31 @@ initialiserCsrf();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saisir plantation - AgriGest Togo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🌾 AgriGest Togo - Agriculteur</h1>
-            <nav>
-                <a href="dashboard.php">Tableau de bord</a>
-                <a href="mes_parcelles.php">Mes parcelles</a>
-                <a href="saisir_intrant.php">Saisir intrant</a>
-                <a href="saisir_plantation.php">Saisir plantation</a>
-                <a href="saisir_recolte.php">Saisir récolte</a>
-                <a href="../auth/logout.php">Déconnexion</a>
-            </nav>
+            <div class="header-inner">
+                <h1>🌾 AgriGest Togo - Agriculteur</h1>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <nav id="navMenu">
+                    <a href="dashboard.php">Tableau de bord</a>
+                    <a href="mes_parcelles.php">Mes parcelles</a>
+                    <a href="saisir_intrant.php">Saisir intrant</a>
+                    <a href="saisir_plantation.php">Saisir plantation</a>
+                    <a href="saisir_recolte.php">Saisir récolte</a>
+                    <a href="../auth/logout.php">Déconnexion</a>
+                </nav>
+            </div>
         </header>
 
         <main>
@@ -205,7 +216,7 @@ initialiserCsrf();
 
                         <!-- Boutons -->
                         <div class="form-actions">
-                            <button type="submit" class="btn">Enregistrer</button>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
                             <a href="dashboard.php" class="btn btn-secondary">Annuler</a>
                         </div>
                     </form>
@@ -218,5 +229,20 @@ initialiserCsrf();
             <p>&copy; 2024 AgriGest Togo - Gestion des Exploitations Agricoles</p>
         </footer>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navMenu = document.getElementById('navMenu');
+
+            if (hamburgerBtn && navMenu) {
+                hamburgerBtn.addEventListener('click', function() {
+                    const isOpen = this.classList.toggle('active');
+                    navMenu.classList.toggle('open');
+                    this.setAttribute('aria-expanded', isOpen);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

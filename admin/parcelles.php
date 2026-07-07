@@ -15,8 +15,6 @@ $erreur = '';
 $action = $_GET['action'] ?? 'list';
 $idParcelle = $_GET['id'] ?? null;
 
-// ==================== TRAITEMENT DES ACTIONS ====================
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
     if (!verifierCsrf()) {
@@ -39,7 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $erreur = 'La superficie doit être un nombre positif.';
             } else {
                 try {
-                    // Verifier que la zone existe
                     $stmtZone = $pdo->prepare("SELECT id_zone FROM ZONE_AGROECOLOGIQUE WHERE id_zone = ?");
                     $stmtZone->execute([$idZone]);
                     if (!$stmtZone->fetch()) {
@@ -47,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     } elseif (!$pdo->prepare("SELECT id_agri FROM AGRICULTEUR WHERE id_agri = ?")->execute([$idAgri]) || !$pdo->prepare("SELECT id_agri FROM AGRICULTEUR WHERE id_agri = ?")->fetch()) {
                         $erreur = 'Agriculteur non trouvé.';
                     } else {
-                        // Generer le code parcelle
                         $idParcelleNouv = genererCodeAvecParent($pdo, 'PARCELLE', 'id_parcelle', 'PAR', $idZone);
                         
                         $stmt = $pdo->prepare(
@@ -104,12 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $idParcelleDelete = nettoyer($_POST['id_parcelle_delete'] ?? '');
             
             try {
-                // Supprimer les references en cascade
                 $pdo->prepare("DELETE FROM UTILISER WHERE id_plantation IN (SELECT id_plantation FROM PLANTATION WHERE id_parcelle = ?)")->execute([$idParcelleDelete]);
                 $pdo->prepare("DELETE FROM RECOLTE WHERE id_plantation IN (SELECT id_plantation FROM PLANTATION WHERE id_parcelle = ?)")->execute([$idParcelleDelete]);
                 $pdo->prepare("DELETE FROM PLANTATION WHERE id_parcelle = ?")->execute([$idParcelleDelete]);
                 
-                // Supprimer la parcelle
                 $pdo->prepare("DELETE FROM PARCELLE WHERE id_parcelle = ?")->execute([$idParcelleDelete]);
                 
                 $message = "Parcelle supprimée avec succès";
@@ -124,8 +118,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 initialiserCsrf();
-
-// ==================== AFFICHAGE ====================
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -133,40 +125,46 @@ initialiserCsrf();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Parcelles - AgriGest Togo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🌾 AgriGest Togo - Admin</h1>
-            <nav>
-                <a href="dashboard.php">Tableau de bord</a>
-                <a href="agriculteurs.php">Agriculteurs</a>
-                <a href="cultures.php">Cultures</a>
-                <a href="cooperatives.php">Coopératives</a>
-                <a href="zones.php">Zones</a>
-                <a href="intrants.php">Intrants</a>
-                <a href="parcelles.php">Parcelles</a>
-                <a href="../auth/logout.php">Déconnexion</a>
-            </nav>
+            <div class="header-inner">
+                <h1>🌾 AgriGest Togo - Admin</h1>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <nav id="navMenu">
+                    <a href="dashboard.php">Tableau de bord</a>
+                    <a href="agriculteurs.php">Agriculteurs</a>
+                    <a href="cultures.php">Cultures</a>
+                    <a href="cooperatives.php">Coopératives</a>
+                    <a href="zones.php">Zones</a>
+                    <a href="intrants.php">Intrants</a>
+                    <a href="parcelles.php">Parcelles</a>
+                    <a href="../auth/logout.php">Déconnexion</a>
+                </nav>
+            </div>
         </header>
 
         <main>
             <h2>Gestion des Parcelles</h2>
 
             <?php if ($message): ?>
-                <div class="message-success">
-                    <?php echo htmlspecialchars($message); ?>
-                </div>
+                <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
             <?php endif; ?>
 
             <?php if ($erreur): ?>
-                <div class="message-erreur">
-                    <?php echo htmlspecialchars($erreur); ?>
-                </div>
+                <div class="alert alert-danger"><?php echo htmlspecialchars($erreur); ?></div>
             <?php endif; ?>
 
-            <!-- ========== LISTE DES PARCELLES ========== -->
             <?php if ($action === 'list'): ?>
                 
                 <div class="actions-bar">
@@ -187,7 +185,7 @@ initialiserCsrf();
                     
                     if (!empty($parcelles)):
                 ?>
-                        <table class="table">
+                        <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -209,12 +207,12 @@ initialiserCsrf();
                                         <td><?php echo htmlspecialchars($parcelle['nom_zone']); ?></td>
                                         <td><?php echo htmlspecialchars($parcelle['nom'] . ' ' . $parcelle['prenom']); ?></td>
                                         <td>
-                                            <a href="?action=edit&id=<?php echo urlencode($parcelle['id_parcelle']); ?>" class="btn btn-small btn-edit">Modifier</a>
-                                            <form method="POST" class="form-delete-inline" onsubmit="return confirm('Êtes-vous sûr ?');">
+                                            <a href="?action=edit&id=<?php echo urlencode($parcelle['id_parcelle']); ?>" class="btn btn-secondary">Modifier</a>
+                                            <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr ?');">
                                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id_parcelle_delete" value="<?php echo htmlspecialchars($parcelle['id_parcelle']); ?>">
-                                                <button type="submit" class="btn btn-small btn-delete">Supprimer</button>
+                                                <button type="submit" class="btn btn-danger">Supprimer</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -226,12 +224,11 @@ initialiserCsrf();
                         echo '<p class="no-data">Aucune parcelle enregistrée.</p>';
                     endif;
                 } catch (PDOException $e) {
-                    echo '<div class="message-erreur">Erreur lors du chargement des parcelles.</div>';
+                    echo '<div class="alert alert-danger">Erreur lors du chargement des parcelles.</div>';
                     error_log('Erreur SQL list parcelle: ' . $e->getMessage());
                 }
                 ?>
 
-            <!-- ========== FORMULAIRE CREATION ========== -->
             <?php elseif ($action === 'create'): ?>
                 
                 <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
@@ -307,7 +304,6 @@ initialiserCsrf();
                     <button type="submit" class="btn btn-primary">Créer</button>
                 </form>
 
-            <!-- ========== FORMULAIRE MODIFICATION ========== -->
             <?php elseif ($action === 'edit' && $idParcelle): ?>
                 
                 <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
@@ -390,10 +386,10 @@ initialiserCsrf();
                         </form>
                 <?php 
                     else:
-                        echo '<div class="message-erreur">Parcelle non trouvée.</div>';
+                        echo '<div class="alert alert-danger">Parcelle non trouvée.</div>';
                     endif;
                 } catch (PDOException $e) {
-                    echo '<div class="message-erreur">Erreur lors du chargement.</div>';
+                    echo '<div class="alert alert-danger">Erreur lors du chargement.</div>';
                     error_log('Erreur SQL edit parcelle: ' . $e->getMessage());
                 }
                 ?>
@@ -406,5 +402,20 @@ initialiserCsrf();
             <p>&copy; 2024 AgriGest Togo - Gestion des Exploitations Agricoles</p>
         </footer>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navMenu = document.getElementById('navMenu');
+
+            if (hamburgerBtn && navMenu) {
+                hamburgerBtn.addEventListener('click', function() {
+                    const isOpen = this.classList.toggle('active');
+                    navMenu.classList.toggle('open');
+                    this.setAttribute('aria-expanded', isOpen);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

@@ -15,8 +15,6 @@ $erreur = '';
 $action = $_GET['action'] ?? 'list';
 $idZone = $_GET['id'] ?? null;
 
-// ==================== TRAITEMENT DES ACTIONS ====================
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
     if (!verifierCsrf()) {
@@ -90,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $idZoneDelete = nettoyer($_POST['id_zone_delete'] ?? '');
             
             try {
-                // Verifier si la zone est utilisee dans des parcelles
                 $stmtCheck = $pdo->prepare("SELECT COUNT(*) AS total FROM PARCELLE WHERE id_zone = ?");
                 $stmtCheck->execute([$idZoneDelete]);
                 $result = $stmtCheck->fetch();
@@ -98,7 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 if ($result['total'] > 0) {
                     $erreur = 'Cette zone est utilisée dans des parcelles et ne peut pas être supprimée.';
                 } else {
-                    // Supprimer la zone
                     $stmtDelete = $pdo->prepare("DELETE FROM ZONE_AGROECOLOGIQUE WHERE id_zone = ?");
                     $stmtDelete->execute([$idZoneDelete]);
                     
@@ -115,8 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 initialiserCsrf();
-
-// ==================== AFFICHAGE ====================
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -124,40 +118,46 @@ initialiserCsrf();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Zones Agroécologiques - AgriGest Togo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🌾 AgriGest Togo - Admin</h1>
-            <nav>
-                <a href="dashboard.php">Tableau de bord</a>
-                <a href="agriculteurs.php">Agriculteurs</a>
-                <a href="cultures.php">Cultures</a>
-                <a href="cooperatives.php">Coopératives</a>
-                <a href="zones.php">Zones</a>
-                <a href="intrants.php">Intrants</a>
-                <a href="parcelles.php">Parcelles</a>
-                <a href="../auth/logout.php">Déconnexion</a>
-            </nav>
+            <div class="header-inner">
+                <h1>🌾 AgriGest Togo - Admin</h1>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <nav id="navMenu">
+                    <a href="dashboard.php">Tableau de bord</a>
+                    <a href="agriculteurs.php">Agriculteurs</a>
+                    <a href="cultures.php">Cultures</a>
+                    <a href="cooperatives.php">Coopératives</a>
+                    <a href="zones.php">Zones</a>
+                    <a href="intrants.php">Intrants</a>
+                    <a href="parcelles.php">Parcelles</a>
+                    <a href="../auth/logout.php">Déconnexion</a>
+                </nav>
+            </div>
         </header>
 
         <main>
             <h2>Gestion des Zones Agroécologiques</h2>
 
             <?php if ($message): ?>
-                <div class="message-success">
-                    <?php echo htmlspecialchars($message); ?>
-                </div>
+                <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
             <?php endif; ?>
 
             <?php if ($erreur): ?>
-                <div class="message-erreur">
-                    <?php echo htmlspecialchars($erreur); ?>
-                </div>
+                <div class="alert alert-danger"><?php echo htmlspecialchars($erreur); ?></div>
             <?php endif; ?>
 
-            <!-- ========== LISTE DES ZONES ========== -->
             <?php if ($action === 'list'): ?>
                 
                 <div class="actions-bar">
@@ -173,7 +173,7 @@ initialiserCsrf();
                     
                     if (!empty($zones)):
                 ?>
-                        <table class="table">
+                        <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -196,12 +196,12 @@ initialiserCsrf();
                                             ?>
                                         </td>
                                         <td>
-                                            <a href="?action=edit&id=<?php echo urlencode($zone['id_zone']); ?>" class="btn btn-small btn-edit">Modifier</a>
-                                            <form method="POST" class="form-delete-inline" onsubmit="return confirm('Êtes-vous sûr ?');">
+                                            <a href="?action=edit&id=<?php echo urlencode($zone['id_zone']); ?>" class="btn btn-secondary">Modifier</a>
+                                            <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr ?');">
                                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id_zone_delete" value="<?php echo htmlspecialchars($zone['id_zone']); ?>">
-                                                <button type="submit" class="btn btn-small btn-delete">Supprimer</button>
+                                                <button type="submit" class="btn btn-danger">Supprimer</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -213,12 +213,11 @@ initialiserCsrf();
                         echo '<p class="no-data">Aucune zone agroécologique enregistrée.</p>';
                     endif;
                 } catch (PDOException $e) {
-                    echo '<div class="message-erreur">Erreur lors du chargement des zones.</div>';
+                    echo '<div class="alert alert-danger">Erreur lors du chargement des zones.</div>';
                     error_log('Erreur SQL list zone: ' . $e->getMessage());
                 }
                 ?>
 
-            <!-- ========== FORMULAIRE CREATION ========== -->
             <?php elseif ($action === 'create'): ?>
                 
                 <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
@@ -237,7 +236,6 @@ initialiserCsrf();
                     <button type="submit" class="btn btn-primary">Créer</button>
                 </form>
 
-            <!-- ========== FORMULAIRE MODIFICATION ========== -->
             <?php elseif ($action === 'edit' && $idZone): ?>
                 
                 <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
@@ -273,10 +271,10 @@ initialiserCsrf();
                         </form>
                 <?php 
                     else:
-                        echo '<div class="message-erreur">Zone non trouvée.</div>';
+                        echo '<div class="alert alert-danger">Zone non trouvée.</div>';
                     endif;
                 } catch (PDOException $e) {
-                    echo '<div class="message-erreur">Erreur lors du chargement.</div>';
+                    echo '<div class="alert alert-danger">Erreur lors du chargement.</div>';
                     error_log('Erreur SQL edit zone: ' . $e->getMessage());
                 }
                 ?>
@@ -289,5 +287,20 @@ initialiserCsrf();
             <p>&copy; 2024 AgriGest Togo - Gestion des Exploitations Agricoles</p>
         </footer>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navMenu = document.getElementById('navMenu');
+
+            if (hamburgerBtn && navMenu) {
+                hamburgerBtn.addEventListener('click', function() {
+                    const isOpen = this.classList.toggle('active');
+                    navMenu.classList.toggle('open');
+                    this.setAttribute('aria-expanded', isOpen);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

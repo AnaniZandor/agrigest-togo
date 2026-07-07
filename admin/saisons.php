@@ -1,7 +1,7 @@
 <?php
 /**
- * admin/cooperatives.php
- * Gestion des coopératives par l'administrateur
+ * admin/saisons.php
+ * Gestion des saisons par l'administrateur
  */
 
 session_start();
@@ -13,7 +13,9 @@ exigerRole('admin');
 $message = '';
 $erreur = '';
 $action = $_GET['action'] ?? 'list';
-$idCoop = $_GET['id'] ?? null;
+$idSaison = $_GET['id'] ?? null;
+
+// ==================== TRAITEMENT DES ACTIONS ====================
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
@@ -25,30 +27,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         if ($actionForm === 'create') {
             
-            $nomCoop = nettoyer($_POST['nom_coop'] ?? '');
-            $localisationCoop = nettoyer($_POST['localisation_coop'] ?? '');
+            $libelleSaison = nettoyer($_POST['libelle_saison'] ?? '');
+            $dateDebut = nettoyer($_POST['date_debut_saison'] ?? '');
+            $dateFin = nettoyer($_POST['date_fin_saison'] ?? '');
             
-            if (empty($nomCoop) || empty($localisationCoop)) {
+            if (empty($libelleSaison) || empty($dateDebut) || empty($dateFin)) {
                 $erreur = 'Tous les champs sont obligatoires.';
+            } elseif (strtotime($dateFin) < strtotime($dateDebut)) {
+                $erreur = 'La date de fin doit être postérieure à la date de début.';
             } else {
                 try {
-                    $idCoopNouv = genererCodeSimple($pdo, 'COOPERATIVE', 'COP');
+                    $idSaisonNouv = genererCodeSimple($pdo, 'SAISON', 'SAI');
                     
                     $stmt = $pdo->prepare(
-                        "INSERT INTO COOPERATIVE (id_coop, nom_coop, localisation_coop)
-                         VALUES (?, ?, ?)"
+                        "INSERT INTO SAISON (id_saison, libelle_saison, date_debut_saison, date_fin_saison)
+                         VALUES (?, ?, ?, ?)"
                     );
-                    $stmt->execute([$idCoopNouv, $nomCoop, $localisationCoop]);
+                    $stmt->execute([$idSaisonNouv, $libelleSaison, $dateDebut, $dateFin]);
                     
-                    $message = "Coopérative créée avec succès (ID: $idCoopNouv)";
+                    $message = "Saison créée avec succès (ID: $idSaisonNouv)";
                     $action = 'list';
                     
                 } catch (PDOException $e) {
                     if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
-                        $erreur = 'Cette coopérative existe déjà.';
+                        $erreur = 'Cette saison existe déjà.';
                     } else {
                         $erreur = 'Erreur lors de la création.';
-                        error_log('Erreur SQL create cooperative: ' . $e->getMessage());
+                        error_log('Erreur SQL create saison: ' . $e->getMessage());
                     }
                 }
             }
@@ -56,70 +61,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         elseif ($actionForm === 'update') {
             
-            $idCoopUpdate = nettoyer($_POST['id_coop'] ?? '');
-            $nomCoop = nettoyer($_POST['nom_coop'] ?? '');
-            $localisationCoop = nettoyer($_POST['localisation_coop'] ?? '');
+            $idSaisonUpdate = nettoyer($_POST['id_saison'] ?? '');
+            $libelleSaison = nettoyer($_POST['libelle_saison'] ?? '');
+            $dateDebut = nettoyer($_POST['date_debut_saison'] ?? '');
+            $dateFin = nettoyer($_POST['date_fin_saison'] ?? '');
             
-            if (empty($idCoopUpdate) || empty($nomCoop) || empty($localisationCoop)) {
+            if (empty($idSaisonUpdate) || empty($libelleSaison) || empty($dateDebut) || empty($dateFin)) {
                 $erreur = 'Tous les champs sont obligatoires.';
+            } elseif (strtotime($dateFin) < strtotime($dateDebut)) {
+                $erreur = 'La date de fin doit être postérieure à la date de début.';
             } else {
                 try {
                     $stmt = $pdo->prepare(
-                        "UPDATE COOPERATIVE 
-                         SET nom_coop = ?, localisation_coop = ? 
-                         WHERE id_coop = ?"
+                        "UPDATE SAISON 
+                         SET libelle_saison = ?, date_debut_saison = ?, date_fin_saison = ? 
+                         WHERE id_saison = ?"
                     );
-                    $stmt->execute([$nomCoop, $localisationCoop, $idCoopUpdate]);
+                    $stmt->execute([$libelleSaison, $dateDebut, $dateFin, $idSaisonUpdate]);
                     
-                    $message = "Coopérative modifiée avec succès";
+                    $message = "Saison modifiée avec succès";
                     $action = 'list';
                     
                 } catch (PDOException $e) {
                     $erreur = 'Erreur lors de la modification.';
-                    error_log('Erreur SQL update cooperative: ' . $e->getMessage());
+                    error_log('Erreur SQL update saison: ' . $e->getMessage());
                 }
             }
         }
         
         elseif ($actionForm === 'delete') {
             
-            $idCoopDelete = nettoyer($_POST['id_coop_delete'] ?? '');
+            $idSaisonDelete = nettoyer($_POST['id_saison_delete'] ?? '');
             
             try {
-                $stmtCheck = $pdo->prepare("SELECT COUNT(*) AS total FROM RESPONSABLE WHERE id_coop = ?");
-                $stmtCheck->execute([$idCoopDelete]);
-                $countResp = $stmtCheck->fetch()['total'];
+                // Vérifier si la saison est utilisée dans des plantations
+                $stmtCheck = $pdo->prepare("SELECT COUNT(*) AS total FROM PLANTATION WHERE id_saison = ?");
+                $stmtCheck->execute([$idSaisonDelete]);
+                $result = $stmtCheck->fetch();
                 
-                $stmtCheck = $pdo->prepare("SELECT COUNT(*) AS total FROM AGRICULTEUR WHERE id_coop = ?");
-                $stmtCheck->execute([$idCoopDelete]);
-                $countAgri = $stmtCheck->fetch()['total'];
-                
-                if ($countResp > 0 || $countAgri > 0) {
-                    $erreur = 'Cette coopérative a des responsables ou agriculteurs et ne peut pas être supprimée.';
+                if ($result['total'] > 0) {
+                    $erreur = 'Cette saison est utilisée dans des plantations et ne peut pas être supprimée.';
                 } else {
-                    $stmtDelete = $pdo->prepare("DELETE FROM COOPERATIVE WHERE id_coop = ?");
-                    $stmtDelete->execute([$idCoopDelete]);
+                    // Supprimer la saison
+                    $stmtDelete = $pdo->prepare("DELETE FROM SAISON WHERE id_saison = ?");
+                    $stmtDelete->execute([$idSaisonDelete]);
                     
-                    $message = "Coopérative supprimée avec succès";
+                    $message = "Saison supprimée avec succès";
                     $action = 'list';
                 }
                 
             } catch (PDOException $e) {
                 $erreur = 'Erreur lors de la suppression.';
-                error_log('Erreur SQL delete cooperative: ' . $e->getMessage());
+                error_log('Erreur SQL delete saison: ' . $e->getMessage());
             }
         }
     }
 }
 
 initialiserCsrf();
+
+// ==================== AFFICHAGE ====================
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Coopératives - AgriGest Togo</title>
+    <title>Gestion des Saisons - AgriGest Togo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
@@ -150,7 +158,7 @@ initialiserCsrf();
         </header>
 
         <main>
-            <h2>Gestion des Coopératives</h2>
+            <h2>Gestion des Saisons</h2>
 
             <?php if ($message): ?>
                 <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
@@ -160,51 +168,56 @@ initialiserCsrf();
                 <div class="alert alert-danger"><?php echo htmlspecialchars($erreur); ?></div>
             <?php endif; ?>
 
+            <!-- ========== LISTE DES SAISONS ========== -->
             <?php if ($action === 'list'): ?>
                 
                 <div class="actions-bar">
-                    <a href="?action=create" class="btn btn-primary">+ Ajouter une coopérative</a>
+                    <a href="?action=create" class="btn btn-primary">+ Ajouter une saison</a>
                 </div>
 
                 <?php
                 try {
                     $stmt = $pdo->query(
-                        "SELECT id_coop, nom_coop, localisation_coop FROM COOPERATIVE ORDER BY nom_coop"
+                        "SELECT id_saison, libelle_saison, date_debut_saison, date_fin_saison
+                         FROM SAISON
+                         ORDER BY date_debut_saison DESC"
                     );
-                    $cooperatives = $stmt->fetchAll();
+                    $saisons = $stmt->fetchAll();
                     
-                    if (!empty($cooperatives)):
+                    if (!empty($saisons)):
                 ?>
                         <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Nom</th>
-                                    <th>Localisation</th>
-                                    <th>Nombre d'agriculteurs</th>
+                                    <th>Libellé</th>
+                                    <th>Date début</th>
+                                    <th>Date fin</th>
+                                    <th>Plantations</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($cooperatives as $coop): ?>
+                                <?php foreach ($saisons as $saison): ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($coop['id_coop']); ?></td>
-                                        <td><?php echo htmlspecialchars($coop['nom_coop']); ?></td>
-                                        <td><?php echo htmlspecialchars($coop['localisation_coop']); ?></td>
+                                        <td><?php echo htmlspecialchars($saison['id_saison']); ?></td>
+                                        <td><?php echo htmlspecialchars($saison['libelle_saison']); ?></td>
+                                        <td><?php echo formaterDate($saison['date_debut_saison']); ?></td>
+                                        <td><?php echo formaterDate($saison['date_fin_saison']); ?></td>
                                         <td>
                                             <?php
-                                            $stmtCount = $pdo->prepare("SELECT COUNT(*) AS total FROM AGRICULTEUR WHERE id_coop = ?");
-                                            $stmtCount->execute([$coop['id_coop']]);
+                                            $stmtCount = $pdo->prepare("SELECT COUNT(*) AS total FROM PLANTATION WHERE id_saison = ?");
+                                            $stmtCount->execute([$saison['id_saison']]);
                                             $count = $stmtCount->fetch()['total'];
                                             echo $count;
                                             ?>
                                         </td>
                                         <td>
-                                            <a href="?action=edit&id=<?php echo urlencode($coop['id_coop']); ?>" class="btn btn-secondary">Modifier</a>
+                                            <a href="?action=edit&id=<?php echo urlencode($saison['id_saison']); ?>" class="btn btn-secondary">Modifier</a>
                                             <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr ?');">
                                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                                 <input type="hidden" name="action" value="delete">
-                                                <input type="hidden" name="id_coop_delete" value="<?php echo htmlspecialchars($coop['id_coop']); ?>">
+                                                <input type="hidden" name="id_saison_delete" value="<?php echo htmlspecialchars($saison['id_saison']); ?>">
                                                 <button type="submit" class="btn btn-danger">Supprimer</button>
                                             </form>
                                         </td>
@@ -214,29 +227,35 @@ initialiserCsrf();
                         </table>
                 <?php 
                     else:
-                        echo '<p class="no-data">Aucune coopérative enregistrée.</p>';
+                        echo '<p class="no-data">Aucune saison enregistrée.</p>';
                     endif;
                 } catch (PDOException $e) {
-                    echo '<div class="alert alert-danger">Erreur lors du chargement des coopératives.</div>';
-                    error_log('Erreur SQL list cooperative: ' . $e->getMessage());
+                    echo '<div class="alert alert-danger">Erreur lors du chargement des saisons.</div>';
+                    error_log('Erreur SQL list saison: ' . $e->getMessage());
                 }
                 ?>
 
+            <!-- ========== FORMULAIRE CREATION ========== -->
             <?php elseif ($action === 'create'): ?>
                 
                 <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
 
                 <form method="POST" class="form-container">
-                    <h3>Créer une nouvelle coopérative</h3>
+                    <h3>Créer une nouvelle saison</h3>
 
                     <div class="form-group">
-                        <label for="nom_coop">Nom de la coopérative</label>
-                        <input type="text" id="nom_coop" name="nom_coop" required>
+                        <label for="libelle_saison">Libellé de la saison</label>
+                        <input type="text" id="libelle_saison" name="libelle_saison" placeholder="Ex: Saison des pluies 2024" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="localisation_coop">Localisation</label>
-                        <input type="text" id="localisation_coop" name="localisation_coop" placeholder="Ex: Lomé, Région Maritime..." required>
+                        <label for="date_debut_saison">Date de début</label>
+                        <input type="date" id="date_debut_saison" name="date_debut_saison" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date_fin_saison">Date de fin</label>
+                        <input type="date" id="date_fin_saison" name="date_fin_saison" required>
                     </div>
 
                     <input type="hidden" name="action" value="create">
@@ -245,37 +264,45 @@ initialiserCsrf();
                     <button type="submit" class="btn btn-primary">Créer</button>
                 </form>
 
-            <?php elseif ($action === 'edit' && $idCoop): ?>
+            <!-- ========== FORMULAIRE MODIFICATION ========== -->
+            <?php elseif ($action === 'edit' && $idSaison): ?>
                 
                 <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
 
                 <?php
                 try {
                     $stmtEdit = $pdo->prepare(
-                        "SELECT id_coop, nom_coop, localisation_coop FROM COOPERATIVE WHERE id_coop = ?"
+                        "SELECT id_saison, libelle_saison, date_debut_saison, date_fin_saison
+                         FROM SAISON
+                         WHERE id_saison = ?"
                     );
-                    $stmtEdit->execute([$idCoop]);
-                    $coopEdit = $stmtEdit->fetch();
+                    $stmtEdit->execute([$idSaison]);
+                    $saisonEdit = $stmtEdit->fetch();
 
-                    if ($coopEdit):
+                    if ($saisonEdit):
                 ?>
                         <form method="POST" class="form-container">
-                            <h3>Modifier la coopérative</h3>
+                            <h3>Modifier la saison</h3>
 
                             <div class="form-group">
-                                <label for="id_coop_display">ID (lecture seule)</label>
-                                <input type="text" id="id_coop_display" value="<?php echo htmlspecialchars($coopEdit['id_coop']); ?>" disabled>
-                                <input type="hidden" name="id_coop" value="<?php echo htmlspecialchars($coopEdit['id_coop']); ?>">
+                                <label for="id_saison_display">ID (lecture seule)</label>
+                                <input type="text" id="id_saison_display" value="<?php echo htmlspecialchars($saisonEdit['id_saison']); ?>" disabled>
+                                <input type="hidden" name="id_saison" value="<?php echo htmlspecialchars($saisonEdit['id_saison']); ?>">
                             </div>
 
                             <div class="form-group">
-                                <label for="nom_coop">Nom de la coopérative</label>
-                                <input type="text" id="nom_coop" name="nom_coop" value="<?php echo htmlspecialchars($coopEdit['nom_coop']); ?>" required>
+                                <label for="libelle_saison">Libellé de la saison</label>
+                                <input type="text" id="libelle_saison" name="libelle_saison" value="<?php echo htmlspecialchars($saisonEdit['libelle_saison']); ?>" required>
                             </div>
 
                             <div class="form-group">
-                                <label for="localisation_coop">Localisation</label>
-                                <input type="text" id="localisation_coop" name="localisation_coop" value="<?php echo htmlspecialchars($coopEdit['localisation_coop']); ?>" required>
+                                <label for="date_debut_saison">Date de début</label>
+                                <input type="date" id="date_debut_saison" name="date_debut_saison" value="<?php echo htmlspecialchars($saisonEdit['date_debut_saison']); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="date_fin_saison">Date de fin</label>
+                                <input type="date" id="date_fin_saison" name="date_fin_saison" value="<?php echo htmlspecialchars($saisonEdit['date_fin_saison']); ?>" required>
                             </div>
 
                             <input type="hidden" name="action" value="update">
@@ -285,11 +312,11 @@ initialiserCsrf();
                         </form>
                 <?php 
                     else:
-                        echo '<div class="alert alert-danger">Coopérative non trouvée.</div>';
+                        echo '<div class="alert alert-danger">Saison non trouvée.</div>';
                     endif;
                 } catch (PDOException $e) {
                     echo '<div class="alert alert-danger">Erreur lors du chargement.</div>';
-                    error_log('Erreur SQL edit cooperative: ' . $e->getMessage());
+                    error_log('Erreur SQL edit saison: ' . $e->getMessage());
                 }
                 ?>
 

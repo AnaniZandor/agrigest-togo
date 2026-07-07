@@ -37,20 +37,31 @@ initialiserCsrf();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mes parcelles - AgriGest Togo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🌾 AgriGest Togo - Agriculteur</h1>
-            <nav>
-                <a href="dashboard.php">Tableau de bord</a>
-                <a href="mes_parcelles.php">Mes parcelles</a>
-                <a href="saisir_intrant.php">Saisir intrant</a>
-                <a href="saisir_plantation.php">Saisir plantation</a>
-                <a href="saisir_recolte.php">Saisir récolte</a>
-                <a href="../auth/logout.php">Déconnexion</a>
-            </nav>
+            <div class="header-inner">
+                <h1>🌾 AgriGest Togo - Agriculteur</h1>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <nav id="navMenu">
+                    <a href="dashboard.php">Tableau de bord</a>
+                    <a href="mes_parcelles.php">Mes parcelles</a>
+                    <a href="saisir_intrant.php">Saisir intrant</a>
+                    <a href="saisir_plantation.php">Saisir plantation</a>
+                    <a href="saisir_recolte.php">Saisir récolte</a>
+                    <a href="../auth/logout.php">Déconnexion</a>
+                </nav>
+            </div>
         </header>
 
         <main>
@@ -63,13 +74,13 @@ initialiserCsrf();
             <section class="management-section">
                 <div class="section-header">
                     <h3>Liste des parcelles</h3>
-                    <a href="mes_parcelles.php?action=create" class="btn">+ Ajouter une parcelle</a>
+                    <a href="mes_parcelles.php?action=create" class="btn btn-primary">+ Ajouter une parcelle</a>
                 </div>
 
                 <?php if (empty($parcelles)): ?>
                     <div class="empty-state">
                         <p>Vous n'avez pas encore de parcelle enregistrée.</p>
-                        <a href="mes_parcelles.php?action=create" class="btn">Créer votre première parcelle</a>
+                        <a href="mes_parcelles.php?action=create" class="btn btn-primary">Créer votre première parcelle</a>
                     </div>
                 <?php else: ?>
                     <table class="data-table">
@@ -92,9 +103,9 @@ initialiserCsrf();
                                     <td><?php echo formaterNombre($parcelle['superficie'], 2); ?></td>
                                     <td><?php echo htmlspecialchars($parcelle['nom_zone']); ?></td>
                                     <td>
-                                        <a href="consulter_parcelle.php?id=<?php echo urlencode($parcelle['id_parcelle']); ?>" class="btn btn-small">Voir</a>
-                                        <a href="modifier_parcelle.php?id=<?php echo urlencode($parcelle['id_parcelle']); ?>" class="btn btn-small">Modifier</a>
-                                        <a href="supprimer_parcelle.php?id=<?php echo urlencode($parcelle['id_parcelle']); ?>" class="btn btn-small btn-danger" onclick="return confirm('Êtes-vous sûr ?')">Supprimer</a>
+                                        <a href="consulter_parcelle.php?id=<?php echo urlencode($parcelle['id_parcelle']); ?>" class="btn btn-secondary btn-sm">Voir</a>
+                                        <a href="modifier_parcelle.php?id=<?php echo urlencode($parcelle['id_parcelle']); ?>" class="btn btn-secondary btn-sm">Modifier</a>
+                                        <a href="supprimer_parcelle.php?id=<?php echo urlencode($parcelle['id_parcelle']); ?>" class="btn btn-danger btn-sm" onclick="return confirm('Êtes-vous sûr ?')">Supprimer</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -109,5 +120,20 @@ initialiserCsrf();
             <p>&copy; 2024 AgriGest Togo - Gestion des Exploitations Agricoles</p>
         </footer>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navMenu = document.getElementById('navMenu');
+
+            if (hamburgerBtn && navMenu) {
+                hamburgerBtn.addEventListener('click', function() {
+                    const isOpen = this.classList.toggle('active');
+                    navMenu.classList.toggle('open');
+                    this.setAttribute('aria-expanded', isOpen);
+                });
+            }
+        });
+    </script>
 </body>
 </html>
