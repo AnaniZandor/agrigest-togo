@@ -79,5 +79,6 @@ if (isset($_SESSION['id_utilisateur']) && isset($_SESSION['role'])) {
             }
         });
     </script>
+    <script src="assets/js/main.js"></script>
 </body>
 </html>
