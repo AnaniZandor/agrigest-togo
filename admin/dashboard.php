@@ -63,22 +63,22 @@ initialiserCsrf();
     <div class="container">
         <header>
             <div class="header-inner">
-                <h1>🌾 AgriGest Togo - Admin</h1>
+<h1><i class="fas fa-seedling" style="color: var(--color-primary);"></i> AgriGest Togo - Admin</h1>
                 <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
                     <span></span>
                     <span></span>
                     <span></span>
                 </button>
-                <nav id="navMenu">
-                    <a href="dashboard.php">Tableau de bord</a>
-                    <a href="agriculteurs.php">Agriculteurs</a>
-                    <a href="cultures.php">Cultures</a>
-                    <a href="cooperatives.php">Coopératives</a>
-                    <a href="zones.php">Zones</a>
-                    <a href="intrants.php">Intrants</a>
-                    <a href="saisons.php">Saisons</a>
-                    <a href="../auth/logout.php">Déconnexion</a>
-                </nav>
+               <nav id="navMenu">
+    <a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Tableau de bord</a>
+    <a href="agriculteurs.php"><i class="fas fa-user-tie"></i> Agriculteurs</a>
+    <a href="cultures.php"><i class="fas fa-sprout"></i> Cultures</a>
+    <a href="cooperatives.php"><i class="fas fa-handshake"></i> Coopératives</a>
+    <a href="zones.php"><i class="fas fa-map"></i> Zones</a>
+    <a href="intrants.php"><i class="fas fa-flask"></i> Intrants</a>
+    <a href="saisons.php"><i class="fas fa-cloud-sun"></i> Saisons</a>
+    <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+</nav>
             </div>
         </header>
 
@@ -149,40 +149,40 @@ initialiserCsrf();
             </section>
 
             <section class="management-section">
-                <h3>Gestion rapide</h3>
-                
-                <div class="quick-links">
-                    <a href="agriculteurs.php?action=create" class="quick-link">
-                        <div class="icon">👨‍🌾</div>
-                        <div class="text">Ajouter un agriculteur</div>
-                    </a>
+    <h3>Gestion rapide</h3>
+    
+    <div class="quick-links">
+        <a href="agriculteurs.php?action=create" class="quick-link">
+            <div class="icon"><i class="fas fa-user-plus"></i></div>
+            <div class="text">Ajouter un agriculteur</div>
+        </a>
 
-                    <a href="cooperatives.php?action=create" class="quick-link">
-                        <div class="icon">🤝</div>
-                        <div class="text">Ajouter une coopérative</div>
-                    </a>
+        <a href="cooperatives.php?action=create" class="quick-link">
+            <div class="icon"><i class="fas fa-handshake"></i></div>
+            <div class="text">Ajouter une coopérative</div>
+        </a>
 
-                    <a href="cultures.php?action=create" class="quick-link">
-                        <div class="icon">🌱</div>
-                        <div class="text">Ajouter une culture</div>
-                    </a>
+        <a href="cultures.php?action=create" class="quick-link">
+            <div class="icon"><i class="fas fa-sprout"></i></div>
+            <div class="text">Ajouter une culture</div>
+        </a>
 
-                    <a href="zones.php?action=create" class="quick-link">
-                        <div class="icon">🗺️</div>
-                        <div class="text">Ajouter une zone</div>
-                    </a>
+        <a href="zones.php?action=create" class="quick-link">
+            <div class="icon"><i class="fas fa-map"></i></div>
+            <div class="text">Ajouter une zone</div>
+        </a>
 
-                    <a href="intrants.php?action=create" class="quick-link">
-                        <div class="icon">🧪</div>
-                        <div class="text">Ajouter un intrant</div>
-                    </a>
+        <a href="intrants.php?action=create" class="quick-link">
+            <div class="icon"><i class="fas fa-flask"></i></div>
+            <div class="text">Ajouter un intrant</div>
+        </a>
 
-                    <a href="saisons.php?action=create" class="quick-link">
-                        <div class="icon">🌦️</div>
-                        <div class="text">Ajouter une saison</div>
-                    </a>
-                </div>
-            </section>
+        <a href="saisons.php?action=create" class="quick-link">
+            <div class="icon"><i class="fas fa-cloud-sun"></i></div>
+            <div class="text">Ajouter une saison</div>
+        </a>
+    </div>
+</section>
 
             <section class="management-section">
                 <h3>Informations</h3>

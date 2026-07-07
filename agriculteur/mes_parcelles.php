@@ -47,20 +47,20 @@ initialiserCsrf();
     <div class="container">
         <header>
             <div class="header-inner">
-                <h1>🌾 AgriGest Togo - Agriculteur</h1>
+<h1><i class="fas fa-seedling" style="color: var(--color-primary);"></i> AgriGest Togo - Agriculteur</h1>
                 <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
                     <span></span>
                     <span></span>
                     <span></span>
                 </button>
                 <nav id="navMenu">
-                    <a href="dashboard.php">Tableau de bord</a>
-                    <a href="mes_parcelles.php">Mes parcelles</a>
-                    <a href="saisir_intrant.php">Saisir intrant</a>
-                    <a href="saisir_plantation.php">Saisir plantation</a>
-                    <a href="saisir_recolte.php">Saisir récolte</a>
-                    <a href="../auth/logout.php">Déconnexion</a>
-                </nav>
+    <a href="dashboard.php"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="mes_parcelles.php"><i class="fas fa-map-marked-alt"></i> Mes parcelles</a>
+    <a href="saisir_intrant.php"><i class="fas fa-vial"></i> Saisir intrant</a>
+    <a href="saisir_plantation.php"><i class="fas fa-sprout"></i> Saisir plantation</a>
+    <a href="saisir_recolte.php"><i class="fas fa-apple-alt"></i> Saisir récolte</a>
+    <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+</nav>
             </div>
         </header>
 

@@ -77,26 +77,27 @@ initialiserCsrf();
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
             <div class="header-inner">
-                <h1>🌾 AgriGest Togo - Agriculteur</h1>
+<h1><i class="fas fa-seedling" style="color: var(--color-primary);"></i> AgriGest Togo - Agriculteur</h1>
                 <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
                     <span></span>
                     <span></span>
                     <span></span>
                 </button>
-                <nav id="navMenu">
-                    <a href="dashboard.php">Tableau de bord</a>
-                    <a href="mes_parcelles.php">Mes parcelles</a>
-                    <a href="saisir_intrant.php">Saisir intrant</a>
-                    <a href="saisir_plantation.php">Saisir plantation</a>
-                    <a href="saisir_recolte.php">Saisir récolte</a>
-                    <a href="../auth/logout.php">Déconnexion</a>
-                </nav>
+               <nav id="navMenu">
+    <a href="dashboard.php"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="mes_parcelles.php"><i class="fas fa-map-marked-alt"></i> Mes parcelles</a>
+    <a href="saisir_intrant.php"><i class="fas fa-vial"></i> Saisir intrant</a>
+    <a href="saisir_plantation.php"><i class="fas fa-sprout"></i> Saisir plantation</a>
+    <a href="saisir_recolte.php"><i class="fas fa-apple-alt"></i> Saisir récolte</a>
+    <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+</nav>
             </div>
         </header>
 
@@ -149,35 +150,35 @@ initialiserCsrf();
             </section>
 
             <section class="management-section">
-                <h3>Actions rapides</h3>
-                
-                <div class="quick-links">
-                    <a href="mes_parcelles.php?action=create" class="quick-link">
-                        <div class="icon">🌱</div>
-                        <div class="text">Ajouter une parcelle</div>
-                    </a>
+    <h3>Actions rapides</h3>
+    
+    <div class="quick-links">
+        <a href="mes_parcelles.php?action=create" class="quick-link">
+            <div class="icon"><i class="fas fa-map-plus"></i></div>
+            <div class="text">Ajouter une parcelle</div>
+        </a>
 
-                    <a href="saisir_plantation.php" class="quick-link">
-                        <div class="icon">🌾</div>
-                        <div class="text">Enregistrer plantation</div>
-                    </a>
+        <a href="saisir_plantation.php" class="quick-link">
+            <div class="icon"><i class="fas fa-seedling"></i></div>
+            <div class="text">Enregistrer plantation</div>
+        </a>
 
-                    <a href="saisir_recolte.php" class="quick-link">
-                        <div class="icon">🌻</div>
-                        <div class="text">Enregistrer récolte</div>
-                    </a>
+        <a href="saisir_recolte.php" class="quick-link">
+            <div class="icon"><i class="fas fa-sun"></i></div>
+            <div class="text">Enregistrer récolte</div>
+        </a>
 
-                    <a href="saisir_intrant.php" class="quick-link">
-                        <div class="icon">🧪</div>
-                        <div class="text">Enregistrer intrant</div>
-                    </a>
+        <a href="saisir_intrant.php" class="quick-link">
+            <div class="icon"><i class="fas fa-flask"></i></div>
+            <div class="text">Enregistrer intrant</div>
+        </a>
 
-                    <a href="mes_parcelles.php" class="quick-link">
-                        <div class="icon">📋</div>
-                        <div class="text">Consulter mes parcelles</div>
-                    </a>
-                </div>
-            </section>
+        <a href="mes_parcelles.php" class="quick-link">
+            <div class="icon"><i class="fas fa-clipboard-list"></i></div>
+            <div class="text">Consulter mes parcelles</div>
+        </a>
+    </div>
+</section>
 
             <section class="management-section">
                 <h3>Informations</h3>

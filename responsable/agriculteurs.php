@@ -135,22 +135,22 @@ initialiserCsrf();
     <div class="container">
         <header>
             <div class="header-inner">
-                <h1>🌾 AgriGest Togo - Responsable</h1>
+<h1><i class="fas fa-seedling" style="color: var(--color-primary);"></i> AgriGest Togo - Responsable</h1>
                 <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
                     <span></span>
                     <span></span>
                     <span></span>
                 </button>
                 <nav id="navMenu">
-                    <a href="dashboard.php">Tableau de bord</a>
-                    <a href="agriculteurs.php">Agriculteurs</a>
-                    <a href="parcelles.php">Parcelles</a>
-                    <a href="plantations.php">Plantations</a>
-                    <a href="recoltes.php">Récoltes</a>
-                    <a href="intrants.php">Intrants</a>
-                    <a href="bilan.php">Bilan</a>
-                    <a href="../auth/logout.php">Déconnexion</a>
-                </nav>
+    <a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Tableau de bord</a>
+    <a href="agriculteurs.php"><i class="fas fa-user-tie"></i> Agriculteurs</a>
+    <a href="parcelles.php"><i class="fas fa-map"></i> Parcelles</a>
+    <a href="plantations.php"><i class="fas fa-seedling"></i> Plantations</a>
+    <a href="recoltes.php"><i class="fas fa-sun"></i> Récoltes</a>
+    <a href="intrants.php"><i class="fas fa-flask"></i> Intrants</a>
+    <a href="bilan.php"><i class="fas fa-chart-bar"></i> Bilan</a>
+    <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+</nav>
             </div>
         </header>
 

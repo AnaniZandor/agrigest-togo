@@ -15,6 +15,8 @@ $erreur = '';
 $action = $_GET['action'] ?? 'list';
 $idIntrant = $_GET['id'] ?? null;
 
+// ==================== TRAITEMENT DES ACTIONS ====================
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
     if (!verifierCsrf()) {
@@ -132,21 +134,21 @@ initialiserCsrf();
     <div class="container">
         <header>
             <div class="header-inner">
-                <h1>🌾 AgriGest Togo - Admin</h1>
+                <h1><i class="fas fa-seedling" style="color: var(--color-primary);"></i> AgriGest Togo - Admin</h1>
                 <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
                     <span></span>
                     <span></span>
                     <span></span>
                 </button>
                 <nav id="navMenu">
-                    <a href="dashboard.php">Tableau de bord</a>
-                    <a href="agriculteurs.php">Agriculteurs</a>
-                    <a href="cultures.php">Cultures</a>
-                    <a href="cooperatives.php">Coopératives</a>
-                    <a href="zones.php">Zones</a>
-                    <a href="intrants.php">Intrants</a>
-                    <a href="saisons.php">Saisons</a>
-                    <a href="../auth/logout.php">Déconnexion</a>
+                    <a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Tableau de bord</a>
+                    <a href="agriculteurs.php"><i class="fas fa-user-tie"></i> Agriculteurs</a>
+                    <a href="cultures.php"><i class="fas fa-sprout"></i> Cultures</a>
+                    <a href="cooperatives.php"><i class="fas fa-handshake"></i> Coopératives</a>
+                    <a href="zones.php"><i class="fas fa-map"></i> Zones</a>
+                    <a href="intrants.php"><i class="fas fa-flask"></i> Intrants</a>
+                    <a href="saisons.php"><i class="fas fa-cloud-sun"></i> Saisons</a>
+                    <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
                 </nav>
             </div>
         </header>
@@ -162,10 +164,11 @@ initialiserCsrf();
                 <div class="alert alert-danger"><?php echo htmlspecialchars($erreur); ?></div>
             <?php endif; ?>
 
+            <!-- ========== LISTE DES INTRANTS ========== -->
             <?php if ($action === 'list'): ?>
                 
                 <div class="actions-bar">
-                    <a href="?action=create" class="btn btn-primary">+ Ajouter un intrant</a>
+                    <a href="?action=create" class="btn btn-primary"><i class="fas fa-plus"></i> Ajouter un intrant</a>
                 </div>
 
                 <?php
@@ -197,21 +200,21 @@ initialiserCsrf();
                                         <td>
                                             <?php 
                                             $types = [
-                                                'engrais' => '🧪 Engrais',
-                                                'semence' => '🌱 Semence',
-                                                'eau' => '💧 Eau'
+                                                'engrais' => '<i class="fas fa-flask"></i> Engrais',
+                                                'semence' => '<i class="fas fa-seedling"></i> Semence',
+                                                'eau' => '<i class="fas fa-tint"></i> Eau'
                                             ];
-                                            echo htmlspecialchars($types[$intrant['type_intrant']] ?? $intrant['type_intrant']);
+                                            echo $types[$intrant['type_intrant']] ?? $intrant['type_intrant'];
                                             ?>
                                         </td>
                                         <td><?php echo htmlspecialchars($intrant['unite_mesure']); ?></td>
                                         <td>
-                                            <a href="?action=edit&id=<?php echo urlencode($intrant['id_intrant']); ?>" class="btn btn-secondary">Modifier</a>
+                                            <a href="?action=edit&id=<?php echo urlencode($intrant['id_intrant']); ?>" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Modifier</a>
                                             <form method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr ?');">
                                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id_intrant_delete" value="<?php echo htmlspecialchars($intrant['id_intrant']); ?>">
-                                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Supprimer</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -228,9 +231,10 @@ initialiserCsrf();
                 }
                 ?>
 
+            <!-- ========== FORMULAIRE CREATION ========== -->
             <?php elseif ($action === 'create'): ?>
                 
-                <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
+                <a href="?action=list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Retour à la liste</a>
 
                 <form method="POST" class="form-container">
                     <h3>Créer un nouvel intrant</h3>
@@ -258,12 +262,13 @@ initialiserCsrf();
                     <input type="hidden" name="action" value="create">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
-                    <button type="submit" class="btn btn-primary">Créer</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Créer</button>
                 </form>
 
+            <!-- ========== FORMULAIRE MODIFICATION ========== -->
             <?php elseif ($action === 'edit' && $idIntrant): ?>
                 
-                <a href="?action=list" class="btn btn-secondary">← Retour à la liste</a>
+                <a href="?action=list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Retour à la liste</a>
 
                 <?php
                 try {
@@ -308,7 +313,7 @@ initialiserCsrf();
                             <input type="hidden" name="action" value="update">
                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
-                            <button type="submit" class="btn btn-primary">Modifier</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Modifier</button>
                         </form>
                 <?php 
                     else:
@@ -343,7 +348,5 @@ initialiserCsrf();
             }
         });
     </script>
-            <script src="../assets/js/script.js"></script>
-
 </body>
 </html>

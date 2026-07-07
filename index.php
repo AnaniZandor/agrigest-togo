@@ -39,7 +39,7 @@ if (isset($_SESSION['id_utilisateur']) && isset($_SESSION['role'])) {
     <div class="container">
         <header>
             <div class="header-inner">
-                <h1>🌾 AgriGest Togo</h1>
+<h1><i class="fas fa-seedling" style="color: var(--color-primary);"></i> AgriGest Togo</h1>
                 <button class="hamburger" id="hamburgerBtn" aria-label="Menu principal" aria-expanded="false">
                     <span></span>
                     <span></span>
