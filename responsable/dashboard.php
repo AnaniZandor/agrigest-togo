@@ -155,6 +155,8 @@ initialiserCsrf();
     <a href="recoltes.php"><i class="fas fa-sun"></i> Récoltes</a>
     <a href="intrants.php"><i class="fas fa-flask"></i> Intrants</a>
     <a href="bilan.php"><i class="fas fa-chart-bar"></i> Bilan</a>
+        <a href="../profil.php"><i class="fas fa-user-circle"></i> Mon profil</a>
+
     <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
 </nav>
             </div>

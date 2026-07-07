@@ -96,6 +96,8 @@ initialiserCsrf();
     <a href="saisir_intrant.php"><i class="fas fa-vial"></i> Saisir intrant</a>
     <a href="saisir_plantation.php"><i class="fas fa-sprout"></i> Saisir plantation</a>
     <a href="saisir_recolte.php"><i class="fas fa-apple-alt"></i> Saisir récolte</a>
+        <a href="../profil.php"><i class="fas fa-user-circle"></i> Mon profil</a>
+
     <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
 </nav>
             </div>

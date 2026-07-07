@@ -77,6 +77,8 @@ initialiserCsrf();
     <a href="zones.php"><i class="fas fa-map"></i> Zones</a>
     <a href="intrants.php"><i class="fas fa-flask"></i> Intrants</a>
     <a href="saisons.php"><i class="fas fa-cloud-sun"></i> Saisons</a>
+        <a href="../profil.php"><i class="fas fa-user-circle"></i> Mon profil</a>
+
     <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
 </nav>
             </div>
