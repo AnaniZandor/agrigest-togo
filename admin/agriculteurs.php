@@ -387,18 +387,6 @@ $agriculteurs = $pdo->query("
         document.getElementById('bouton_annuler').style.display = 'none';
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const hamburgerBtn = document.getElementById('hamburgerBtn');
-        const navMenu = document.getElementById('navMenu');
-
-        if (hamburgerBtn && navMenu) {
-            hamburgerBtn.addEventListener('click', function() {
-                const isOpen = this.classList.toggle('active');
-                navMenu.classList.toggle('open');
-                this.setAttribute('aria-expanded', isOpen);
-            });
-        }
-    });
     </script>
         <script src="../assets/js/script.js"></script>
 
