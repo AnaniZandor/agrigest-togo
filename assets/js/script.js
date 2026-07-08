@@ -1,10 +1,10 @@
 /**
  * assets/js/script.js
  * AgriGest Togo - Navigation complète + Header Scroll
- * v3.1 Professionnel
+ * v3.2 PRODUCTION
  */
 
-function() {
+(function() {
     'use strict';
 
     // ========================================
@@ -39,31 +39,38 @@ function() {
     }
 
     // ========================================
-    // 2. HAMBURGER MENU - v3.1 AMÉLIORÉ
+    // 2. HAMBURGER MENU - CORRIGÉ v3.2
     // ========================================
     function initHamburger() {
         const hamburger = document.querySelector('.hamburger');
         const nav = document.querySelector('nav');
 
         if (!hamburger || !nav) {
-            console.warn('❌ Hamburger ou nav non trouvés');
+            console.error('❌ ERREUR: Hamburger ou nav non trouvés');
+            console.log('Hamburger:', hamburger);
+            console.log('Nav:', nav);
             return;
         }
 
         console.log('✅ Hamburger initialisé');
 
+        // Au clic sur le hamburger
         hamburger.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
+            console.log('🔘 Click hamburger');
+            
             const isOpen = nav.classList.contains('open');
             
             if (isOpen) {
+                // Fermer
                 nav.classList.remove('open');
                 hamburger.classList.remove('active');
                 hamburger.setAttribute('aria-expanded', 'false');
                 console.log('🔒 Menu fermé');
             } else {
+                // Ouvrir
                 nav.classList.add('open');
                 hamburger.classList.add('active');
                 hamburger.setAttribute('aria-expanded', 'true');
@@ -71,18 +78,19 @@ function() {
             }
         });
 
-        // Fermer au clic sur un lien
-        nav.querySelectorAll('a:not(.nav-dropdown-btn)').forEach(function(link) {
+        // Fermer au clic sur un lien (mobile uniquement)
+        nav.querySelectorAll('a').forEach(function(link) {
             link.addEventListener('click', function() {
                 if (window.innerWidth <= 768) {
                     nav.classList.remove('open');
                     hamburger.classList.remove('active');
                     hamburger.setAttribute('aria-expanded', 'false');
+                    console.log('📱 Menu fermé (click lien mobile)');
                 }
             });
         });
 
-        // Fermer en redimensionnant
+        // Fermer si on redimensionne au-delà de 768px
         window.addEventListener('resize', function() {
             if (window.innerWidth > 768) {
                 nav.classList.remove('open');
@@ -91,160 +99,130 @@ function() {
             }
         });
 
-        // Fermer en cliquant en dehors (desktop + mobile)
+        // Fermer en cliquant en dehors du header
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('header')) {
+            if (!e.target.closest('header') && nav.classList.contains('open')) {
                 nav.classList.remove('open');
                 hamburger.classList.remove('active');
                 hamburger.setAttribute('aria-expanded', 'false');
+                console.log('🔒 Menu fermé (click extérieur)');
             }
         });
     }
 
-   // ========================================
-// 3. DROPDOWN "PLUS" - v3.2 CORRIGÉ
-// ========================================
-function initNavDropdown() {
-    const navDropdownBtn = document.querySelector('.nav-dropdown-btn');
-    const navDropdownMenu = document.querySelector('.nav-dropdown-menu');
-    const navDropdown = document.querySelector('.nav-dropdown');
-    const nav = document.querySelector('nav');
-    const navLinks = document.querySelectorAll('nav > a');
+    // ========================================
+    // 3. DROPDOWN "PLUS" - v3.2 CORRIGÉ
+    // ========================================
+    function initNavDropdown() {
+        const navDropdownBtn = document.querySelector('.nav-dropdown-btn');
+        const navDropdownMenu = document.querySelector('.nav-dropdown-menu');
+        const navDropdown = document.querySelector('.nav-dropdown');
+        const nav = document.querySelector('nav');
+        const navLinks = document.querySelectorAll('nav > a');
 
-    if (!navDropdown || !navDropdownBtn || !navDropdownMenu) {
-        console.warn('⚠️ Dropdown non trouvé');
-        return;
-    }
+        if (!navDropdown || !navDropdownBtn || !navDropdownMenu) {
+            console.warn('⚠️ Dropdown non trouvé (normal si pas assez de liens)');
+            return;
+        }
 
-    console.log('✅ Dropdown manager initialisé');
+        console.log('✅ Dropdown manager initialisé');
 
-    // Remplir le dropdown avec les liens cachés
-    function populateDropdown() {
-        navDropdownMenu.innerHTML = '';
-        
-        navLinks.forEach((link) => {
-            // Si le lien est hors de vue ou caché
-            if (link.offsetLeft + link.offsetWidth > nav.offsetWidth - 100) {
-                const clone = link.cloneNode(true);
-                clone.className = clone.className.replace(/\s*active\s*/, ' ').trim();
-                navDropdownMenu.appendChild(clone);
-            }
-        });
-    }
+        // Détecter et gérer le débordement
+        function checkOverflow() {
+            let hasOverflow = false;
 
-    // Détecter et gérer le débordement
-    function checkOverflow() {
-        let hasOverflow = false;
-
-        // Réinitialiser : afficher tous les liens
-        navLinks.forEach(link => {
-            link.style.display = 'flex';
-        });
-
-        navDropdownMenu.innerHTML = '';
-
-        // Calculer la largeur nécessaire pour afficher le bouton "Plus"
-        const requiredDropdownWidth = 80; // env. width du bouton "Plus"
-        const navAvailableWidth = nav.offsetWidth - requiredDropdownWidth - 20;
-
-        let currentWidth = 0;
-        let linksToHide = [];
-
-        // Parcourir les liens et identifier ceux à cacher
-        navLinks.forEach((link, index) => {
-            const linkWidth = link.offsetWidth;
-            currentWidth += linkWidth;
-
-            if (currentWidth > navAvailableWidth) {
-                linksToHide.push(link);
-                hasOverflow = true;
-            }
-        });
-
-        // Si débordement détecté
-        if (hasOverflow && linksToHide.length > 0) {
-            console.log(`📊 ${linksToHide.length} lien(s) caché(s) pour débordement`);
-            
-            // Montrer le dropdown
-            navDropdown.classList.add('has-overflow');
-
-            // Cacher les liens qui débordent
-            linksToHide.forEach(link => {
-                link.style.display = 'none';
+            // Réinitialiser : afficher tous les liens
+            navLinks.forEach(link => {
+                link.style.display = 'flex';
             });
 
-            // Remplir le dropdown avec les liens cachés
-            linksToHide.forEach(link => {
-                const clone = link.cloneNode(true);
-                clone.style.display = 'flex';
-                clone.className = clone.className.replace(/\s*active\s*/, ' ').trim();
-                navDropdownMenu.appendChild(clone);
-            });
-        } else {
-            // Pas de débordement
-            console.log('✅ Pas de débordement');
-            navDropdown.classList.remove('has-overflow');
             navDropdownMenu.innerHTML = '';
-        }
-    }
 
-    // Toggle dropdown
-    navDropdownBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🔽 Toggle dropdown');
-        navDropdownBtn.classList.toggle('active');
-        navDropdownMenu.classList.toggle('open');
-    });
+            // Calculer la largeur disponible
+            const requiredDropdownWidth = 80; // width du bouton "Plus"
+            const navAvailableWidth = nav.offsetWidth - requiredDropdownWidth - 20;
 
-    // Fermer au clic sur un lien du dropdown
-    navDropdownMenu.addEventListener('click', function(e) {
-        if (e.target.tagName === 'A' || e.target.closest('a')) {
-            navDropdownBtn.classList.remove('active');
-            navDropdownMenu.classList.remove('open');
-            
-            // Fermer le menu mobile aussi si ouvert
-            if (window.innerWidth <= 768) {
-                const hamburger = document.querySelector('.hamburger');
-                nav.classList.remove('open');
-                hamburger?.classList.remove('active');
+            let currentWidth = 0;
+            let linksToHide = [];
+
+            // Identifier les liens à cacher
+            navLinks.forEach((link) => {
+                const linkWidth = link.offsetWidth;
+                currentWidth += linkWidth;
+
+                if (currentWidth > navAvailableWidth) {
+                    linksToHide.push(link);
+                    hasOverflow = true;
+                }
+            });
+
+            // Appliquer les changements
+            if (hasOverflow && linksToHide.length > 0) {
+                console.log(`📊 ${linksToHide.length} lien(s) caché(s)`);
+                
+                navDropdown.classList.add('has-overflow');
+
+                linksToHide.forEach(link => {
+                    link.style.display = 'none';
+                });
+
+                linksToHide.forEach(link => {
+                    const clone = link.cloneNode(true);
+                    clone.style.display = 'flex';
+                    navDropdownMenu.appendChild(clone);
+                });
+            } else {
+                console.log('✅ Pas de débordement');
+                navDropdown.classList.remove('has-overflow');
+                navDropdownMenu.innerHTML = '';
             }
         }
-    });
 
-    // Fermer en cliquant en dehors
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.nav-dropdown')) {
-            navDropdownBtn.classList.remove('active');
-            navDropdownMenu.classList.remove('open');
-        }
-    });
-
-    // IMPORTANT : Vérifier le débordement
-    // Attendre que les fonts soient chargées
-    if (document.fonts) {
-        document.fonts.ready.then(() => {
-            console.log('🔤 Fonts chargées, vérification du débordement...');
-            setTimeout(checkOverflow, 200);
+        // Toggle dropdown
+        navDropdownBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            navDropdownBtn.classList.toggle('active');
+            navDropdownMenu.classList.toggle('open');
         });
-    } else {
+
+        // Fermer au clic sur un lien
+        navDropdownMenu.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' || e.target.closest('a')) {
+                navDropdownBtn.classList.remove('active');
+                navDropdownMenu.classList.remove('open');
+            }
+        });
+
+        // Fermer en cliquant en dehors
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.nav-dropdown')) {
+                navDropdownBtn.classList.remove('active');
+                navDropdownMenu.classList.remove('open');
+            }
+        });
+
+        // Vérifier le débordement
         setTimeout(checkOverflow, 300);
+        window.addEventListener('resize', function() {
+            setTimeout(checkOverflow, 250);
+        });
+        window.addEventListener('load', function() {
+            setTimeout(checkOverflow, 100);
+        });
     }
 
-    // Vérifier aussi au resize
-    let resizeTimer;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            console.log('↔️ Resize détecté, re-vérification...');
-            checkOverflow();
-        }, 250);
+    // ========================================
+    // 4. INITIALISATION GLOBALE
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 AgriGest Togo v3.2 - Initialisation...');
+        
+        initHeaderScroll();
+        initHamburger();
+        initNavDropdown();
+        
+        console.log('✅ Tous les scripts chargés');
     });
 
-    // Vérifier quand la page est complètement chargée
-    window.addEventListener('load', function() {
-        console.log('📄 Page complètement chargée, vérification finale...');
-        setTimeout(checkOverflow, 100);
-    });
- }
-}
+})();
