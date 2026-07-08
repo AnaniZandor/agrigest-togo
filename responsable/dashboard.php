@@ -158,8 +158,17 @@ initialiserCsrf();
         <a href="../profil.php"><i class="fas fa-user-circle"></i> Mon profil</a>
 
     <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
-</nav>
+            <!-- Dropdown pour overflow -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-btn" aria-label="Plus d'options">
+                    Plus <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <!-- Les liens en excès vont ici dynamiquement -->
+                </div>
             </div>
+        </nav>
+    </div>
         </header>
 
         <main>

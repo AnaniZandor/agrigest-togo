@@ -117,8 +117,17 @@ initialiserCsrf();
     <a href="saisir_plantation.php"><i class="fas fa-sprout"></i> Saisir plantation</a>
     <a href="saisir_recolte.php"><i class="fas fa-apple-alt"></i> Saisir récolte</a>
     <a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
-</nav>
+            <!-- Dropdown pour overflow -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-btn" aria-label="Plus d'options">
+                    Plus <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <!-- Les liens en excès vont ici dynamiquement -->
+                </div>
             </div>
+        </nav>
+    </div>
         </header>
 
         <main>
