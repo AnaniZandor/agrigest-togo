@@ -191,6 +191,7 @@ initialiserCsrf();
                     
                     if (!empty($intrants)):
                 ?>
+                        <div class="table-wrapper">
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -230,6 +231,7 @@ initialiserCsrf();
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
                 <?php 
                     else:
                         echo '<p class="no-data">Aucun intrant enregistré.</p>';

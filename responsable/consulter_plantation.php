@@ -147,6 +147,7 @@ initialiserCsrf();
                 <?php if (empty($intrants)): ?>
                     <p class="text-muted">Aucun intrant enregistré pour cette plantation.</p>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -169,6 +170,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </div>
 
@@ -179,6 +181,7 @@ initialiserCsrf();
                 <?php if (empty($recoltes)): ?>
                     <p class="text-muted">Aucune récolte enregistrée pour cette plantation.</p>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -201,6 +204,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </div>
 

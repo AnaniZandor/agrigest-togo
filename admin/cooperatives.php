@@ -184,6 +184,7 @@ initialiserCsrf();
                     
                     if (!empty($cooperatives)):
                 ?>
+                        <div class="table-wrapper">
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -221,6 +222,7 @@ initialiserCsrf();
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
                 <?php 
                     else:
                         echo '<p class="no-data">Aucune coopérative enregistrée.</p>';

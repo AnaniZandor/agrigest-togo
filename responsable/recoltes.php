@@ -163,6 +163,7 @@ initialiserCsrf();
                         <a href="agriculteurs.php" class="btn btn-primary">Ajouter un agriculteur</a>
                     </div>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -196,6 +197,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </section>
 

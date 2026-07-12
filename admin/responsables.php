@@ -247,6 +247,7 @@ $responsables = $pdo->query("
                 <?php if (empty($responsables)): ?>
                     <p class="no-data">Aucun responsable enregistré.</p>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -283,6 +284,7 @@ $responsables = $pdo->query("
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
 
             <!-- ========== FORMULAIRE CREATION ========== -->

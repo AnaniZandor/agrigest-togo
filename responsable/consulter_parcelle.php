@@ -131,6 +131,7 @@ initialiserCsrf();
                 <?php if (empty($plantations)): ?>
                     <p class="text-muted">Aucune plantation enregistrée sur cette parcelle.</p>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -155,6 +156,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </div>
 

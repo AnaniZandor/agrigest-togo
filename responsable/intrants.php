@@ -179,6 +179,7 @@ initialiserCsrf();
                         <p>Aucun intrant utilisé dans votre coopérative.</p>
                     </div>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -199,6 +200,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </section>
 
@@ -213,6 +215,7 @@ initialiserCsrf();
                         <p>Aucun intrant utilisé dans votre coopérative.</p>
                     </div>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -243,6 +246,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </section>
 

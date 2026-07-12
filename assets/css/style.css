@@ -93,6 +93,10 @@ html::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-base);
   font-size: var(--fs-base);
@@ -100,6 +104,7 @@ body {
   background: var(--bg);
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   display: flex;
@@ -1128,16 +1133,20 @@ textarea {
 /* ========================================
    11. TABLEAUX
    ======================================== */
-.data-table {
+.table-wrapper {
   width: 100%;
-  border-collapse: collapse;
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  font-size: var(--fs-sm);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.data-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  background: var(--surface);
+  font-size: var(--fs-sm);
 }
 
 .data-table thead {
@@ -1163,6 +1172,16 @@ textarea {
   padding: var(--space-md);
   border-bottom: 1px solid var(--border);
   color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.data-table td:last-child {
+  white-space: normal;
+}
+
+.data-table td:last-child .btn-sm {
+  display: inline-block;
+  margin: 2px 4px 2px 0;
 }
 
 .data-table tbody tr:hover {

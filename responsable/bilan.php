@@ -243,6 +243,7 @@ initialiserCsrf();
                         <p>Aucune donnée de récolte disponible.</p>
                     </div>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -265,6 +266,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </section>
 
@@ -277,6 +279,7 @@ initialiserCsrf();
                         <p>Aucune donnée de zone disponible.</p>
                     </div>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -303,6 +306,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </section>
 
@@ -315,6 +319,7 @@ initialiserCsrf();
                         <p>Aucune utilisation d'intrant enregistrée.</p>
                     </div>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -339,6 +344,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </section>
 

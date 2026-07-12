@@ -181,6 +181,7 @@ initialiserCsrf();
                 <?php if (empty($parcelles)): ?>
                     <p class="text-muted">Aucune parcelle enregistrée pour cet agriculteur.</p>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -207,6 +208,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </div>
 

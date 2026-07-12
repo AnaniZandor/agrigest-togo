@@ -254,6 +254,7 @@ $agriculteurs = $pdo->query("
             <div class="card" style="margin-bottom: 30px;">
                 <h2>Cooperatives</h2>
 
+                <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
                         <tr><th>Code</th><th>Nom</th><th>Localisation</th></tr>
@@ -268,6 +269,7 @@ $agriculteurs = $pdo->query("
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
 
                 <h3>Ajouter une cooperative</h3>
                 <form method="POST" class="form-card">
@@ -288,6 +290,7 @@ $agriculteurs = $pdo->query("
             <div class="card" style="margin-bottom: 30px;">
                 <h2>Agriculteurs</h2>
 
+                <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -316,6 +319,7 @@ $agriculteurs = $pdo->query("
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
 
                 <h3 id="titre_form_agri">Ajouter un agriculteur</h3>
                 <form method="POST" class="form-card" id="form_agriculteur">

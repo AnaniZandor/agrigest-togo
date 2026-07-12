@@ -92,6 +92,7 @@ initialiserCsrf();
                         <a href="mes_parcelles.php?action=create" class="btn btn-primary">Créer votre première parcelle</a>
                     </div>
                 <?php else: ?>
+                    <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -120,6 +121,7 @@ initialiserCsrf();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </section>
 
